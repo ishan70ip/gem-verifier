@@ -38,8 +38,13 @@ returns `{ status, ai_enabled, ai_mode }`.
 | `UPLOAD_DIR` | `./uploads` | Uploaded PDFs |
 | `DB_FILE` | `./data/db.json` | Embedded DB file |
 | `JWT_SECRET_KEY` | dev secret | Change in production |
-| `GEMINI_API_KEY` | _(empty)_ | Optional LLM second opinions |
-| `GEMINI_MODEL` | `gemini-2.0-flash` | Gemini model name |
+| `DB_FILE` | `./data/db.json` | File-mode database path |
+| `DB_MODE` | `file` | `file` = embedded store · `supabase` = cloud Postgres |
+| `SUPABASE_URL` | _(empty)_ | Supabase project URL (supabase mode) |
+| `SUPABASE_SERVICE_KEY` | _(empty)_ | Service/secret key, backend only (supabase mode) |
+| `SUPABASE_BUCKET` | `bid-uploads` | Storage bucket (supabase mode) |
+| `GEMINI_API_KEY` | _(empty)_ | Optional LLM adjudication |
+| `GEMINI_MODEL` | `gemini-3.6-flash` | Gemini model name |
 
 ## Key endpoints (all under `/api`, JWT Bearer except login)
 

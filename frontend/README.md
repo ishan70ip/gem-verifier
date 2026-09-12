@@ -20,6 +20,18 @@ VITE_API_BASE_URL=https://<your-api-host>/api npm run build
 npm run preview  # preview the dist/ output
 ```
 
+Optional live dashboard (Supabase Realtime — only when the backend runs in
+`DB_MODE=supabase`):
+
+```bash
+# frontend/.env
+VITE_SUPABASE_URL=https://xyzcompany.supabase.co
+VITE_SUPABASE_KEY=your-publishable-key
+```
+
+Without these, the dashboard loads data on open as normal; with them, new
+bids/updates stream in live with no refresh.
+
 ## Demo logins (password for all: `Password123!`)
 
 - Officer: `officer@procurement.gov.in`
