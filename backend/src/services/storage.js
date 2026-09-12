@@ -11,7 +11,10 @@ import { config } from "../config/index.js";
 const BUCKET = process.env.SUPABASE_BUCKET || "bid-uploads";
 
 export function storageMode() {
-  return process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY ? "supabase" : "local";
+  const dbMode = (process.env.DB_MODE || "file").toLowerCase();
+  return dbMode === "supabase" && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY
+    ? "supabase"
+    : "local";
 }
 
 async function supabaseAdmin() {
