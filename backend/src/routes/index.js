@@ -2,14 +2,14 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import multer from "multer";
-import fs from "node:fs/promises";
-import path from "node:path";
+import os from "node:os";
 import { config } from "../config/index.js";
 import { auth, officer, vendor, audit } from "../middleware/auth.js";
 import { analyzeEvaluation } from "../services/analyze.js";
 import { extractTextFromFile } from "../services/extract.js";
 import { geminiMode } from "../services/gemini.js";
 import { verifyVendorOnPortals } from "../services/mockPortals.js";
+import { saveUpload, readFile } from "../services/storage.js";
 import {
   AuditLog,
   Award,
@@ -24,7 +24,7 @@ import {
 } from "../db/models.js";
 
 const router = Router();
-const upload = multer({ dest: config.uploadDir, limits: { fileSize: config.maxUploadSize } });
+const upload = multer({ dest: os.tmpdir(), limits: { fileSize: config.maxUploadSize } });
 const clean = (item) => (item ? { ...item, id: item._id, _id: undefined } : item);
 const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 
@@ -66,16 +66,14 @@ router.get("/tenders/:id", ...officer, asyncRoute(async (req, res) => {
 router.post("/tenders/:id/documents", ...officer, upload.single("file"), asyncRoute(async (req, res) => {
   const tender = await Tender.findById(req.params.id).lean();
   if (!tender || !req.file) return res.status(404).json({ detail: "Tender or file not found" });
-  await fs.mkdir(config.uploadDir, { recursive: true });
-  const target = path.join(config.uploadDir, `${req.file.filename}_${path.basename(req.file.originalname)}`);
-  await fs.rename(req.file.path, target);
+  const stored = await saveUpload(req.file);
   const document = await Document.create({
     tenderId: tender._id,
     documentType: req.body.document_type || "tender_notice",
     originalFilename: req.file.originalname,
-    storagePath: target,
+    storagePath: stored.storagePath,
     mimeType: req.file.mimetype,
-    fileSize: req.file.size,
+    fileSize: stored.fileSize,
     uploadedBy: req.user.id,
     visibility: "public",
     status: "ACTIVE",
@@ -384,18 +382,16 @@ router.post("/vendor/bids/:id/documents", ...vendor, upload.single("file"), asyn
   const vendorDoc = await Vendor.findOne({ userId: req.user.id });
   const bid = await Bid.findOne({ _id: req.params.id, vendorId: vendorDoc._id });
   if (!bid || !req.file) return res.status(404).json({ detail: "Bid or document not found" });
-  await fs.mkdir(config.uploadDir, { recursive: true });
-  const target = path.join(config.uploadDir, `${req.file.filename}_${path.basename(req.file.originalname)}`);
-  await fs.rename(req.file.path, target);
+  const stored = await saveUpload(req.file);
   const document = await Document.create({
     bidId: bid._id,
     tenderId: bid.tenderId,
     vendorId: vendorDoc._id,
     documentType: req.body.document_type || "bid_document",
     originalFilename: req.file.originalname,
-    storagePath: target,
+    storagePath: stored.storagePath,
     mimeType: req.file.mimetype,
-    fileSize: req.file.size,
+    fileSize: stored.fileSize,
     uploadedBy: req.user.id,
     visibility: "vendor_and_officer",
     status: "ACTIVE",
@@ -416,7 +412,10 @@ router.get("/documents/:id/download", auth, asyncRoute(async (req, res) => {
     const vendorDoc = await Vendor.findOne({ userId: req.user.id });
     if (document.vendorId !== vendorDoc?._id) return res.status(403).json({ detail: "Unauthorized access to document" });
   }
-  res.download(document.storagePath, document.originalFilename);
+  const buffer = await readFile(document.storagePath);
+  res.setHeader("Content-Type", document.mimeType || "application/octet-stream");
+  res.setHeader("Content-Disposition", `attachment; filename="${(document.originalFilename || "document").replace(/"/g, "")}"`);
+  res.send(buffer);
 }));
 router.get("/vendor/contracts", ...vendor, asyncRoute(async (req, res) => {
   const vendorDoc = await Vendor.findOne({ userId: req.user.id });

@@ -2,8 +2,9 @@ import express from "express";
 import cors from "cors";
 import fs from "node:fs";
 import { config } from "./config/index.js";
-import { connectDatabase } from "./db/models.js";
+import { connectDatabase, dbMode } from "./db/models.js";
 import { geminiMode } from "./services/gemini.js";
+import { storageMode } from "./services/storage.js";
 import router from "./routes/index.js";
 
 const app = express();
@@ -12,7 +13,7 @@ app.use(cors({ origin: config.frontendOrigin, credentials: true }));
 app.use(express.json());
 
 app.get("/health", (_req, res) =>
-  res.json({ status: "ok", service: config.appName, ai_enabled: true, ai_mode: geminiMode() })
+  res.json({ status: "ok", service: config.appName, ai_enabled: true, ai_mode: geminiMode(), db_mode: dbMode, storage: storageMode() })
 );
 
 app.use(config.apiPrefix, router);

@@ -268,7 +268,12 @@ export function runComplianceForVendor({ vendor, bid, documents, docText, tender
     });
   }
 
-  // ---------- scoring ----------
+  return { fields, portal, checks, ...scoreVerdict(checks, vendor) };
+}
+
+// Recompute score / risk / recommendation from an (optionally AI-updated)
+// check list, e.g. after Gemini adjudication resolves ambiguous items.
+export function scoreVerdict(checks, vendor) {
   const totalWeight = checks.reduce((s, c) => s + c.weight, 0);
   const earned = checks.reduce((s, c) => s + (c.status === "compliant" ? c.weight : c.status === "needs_review" ? c.weight * 0.4 : 0), 0);
   const score = totalWeight ? Math.round((earned / totalWeight) * 100) : 0;
@@ -289,5 +294,5 @@ export function runComplianceForVendor({ vendor, bid, documents, docText, tender
         ? `CONDITIONAL - ${reviewItems.length} item(s) need officer review (${reviewItems.map(labelOf).join(", ")}). May qualify after verification.`
         : `ELIGIBLE - all ${checks.length} checks passed with score ${score}%. Recommend qualification.`;
 
-  return { fields, portal, checks, score, riskLevel, recommendation, eligible };
+  return { score, riskLevel, recommendation, eligible };
 }
