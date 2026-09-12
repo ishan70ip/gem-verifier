@@ -7,7 +7,7 @@
 //          It may only resolve ambiguity - it can never overturn a
 //          deterministic compliant/non_compliant verdict. Every call stores
 //          its prompt + raw response on the compliance row for auditability.
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 export function geminiMode() {
   return process.env.GEMINI_API_KEY ? `gemini:${MODEL}` : "heuristic";
