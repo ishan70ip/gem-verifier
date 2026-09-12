@@ -1,0 +1,44 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 902 >>
+stream
+BT /F1 11 Tf
+1 0 0 1 50 720 Tm (MANUFACTURER AUTHORISATION FORM \(MAF\)) Tj
+1 0 0 1 50 705 Tm (Ref: MAF/SRV/2026/4471  Date: 04-Sep-2026) Tj
+1 0 0 1 50 690 Tm (To: Brightline Technologies LLP \(GSTIN: 27BBBBB1111B2Z6\)) Tj
+1 0 0 1 50 675 Tm (Subject: OEM Authorization for GeM Tender GEM/2026/B/1001) Tj
+1 0 0 1 50 660 Tm (We, the undersigned Original Equipment Manufacturer of enterprise) Tj
+1 0 0 1 50 645 Tm (rack servers, hereby authorize Brightline Technologies LLP to quote,) Tj
+1 0 0 1 50 630 Tm (supply and support our products against the above tender.) Tj
+1 0 0 1 50 615 Tm (We extend full back-to-back warranty support of 3 years comprehensive) Tj
+1 0 0 1 50 600 Tm (on-site warranty through our authorized service network.) Tj
+1 0 0 1 50 585 Tm (Products offered carry 55 percent local content under Make in India.) Tj
+1 0 0 1 50 570 Tm (Authorised Signatory \(OEM\), Seal and Stamp.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001194 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1264
+%%EOF
