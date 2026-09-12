@@ -9,10 +9,16 @@ without any of it.
    database password it shows.
 2. Open the project → **SQL Editor** → paste the entire contents of
    `backend/supabase/schema.sql` → **Run**. Re-running is safe.
-3. **Project Settings → API**: copy two values:
-   - `Project URL` → `SUPABASE_URL`
-   - `service_role` **secret** key → `SUPABASE_SERVICE_KEY` (backend only!)
-   - `anon` **public** key → `VITE_SUPABASE_KEY` (frontend only)
+   Then run `backend/supabase/migration-002.sql` and
+   `backend/supabase/migration-003.sql` the same way (timestamp columns +
+   Realtime publication; skip if you cloned after they were merged into
+   `schema.sql` — both files are safe to re-run regardless).
+3. **Project Settings → API** (or the **Connect** button): copy values.
+   New-format keys look like `sb_publishable_…` (public) and `sb_secret_…`
+   (secret); classic `anon`/`service_role` JWTs also work:
+   - `Project URL` → `SUPABASE_URL` (backend) / `VITE_SUPABASE_URL` (frontend)
+   - publishable/`anon` key → `VITE_SUPABASE_KEY` (frontend only, safe to expose)
+   - secret/`service_role` key → `SUPABASE_SERVICE_KEY` (**backend `.env` only**, never frontend, never git)
 4. Storage bucket `bid-uploads` is created by the schema SQL. Verify under
    **Storage**; leave it **private** (the backend reads/writes with the
    service key).
@@ -20,9 +26,10 @@ without any of it.
 ## 2. Gemini key (real AI verification) — ~5 min
 
 1. Go to **ai.google.dev** → *Get API key* → create key in a Google project.
-2. Save as `GEMINI_API_KEY`. Without it the engine runs in heuristic mode;
-   with it, ambiguous checks get AI adjudication (prompt + response stored
-   per compliance row for audit).
+2. Save as `GEMINI_API_KEY`. Set `GEMINI_MODEL=gemini-3.6-flash`
+   (2.x models are retired for new keys). Without a key the engine runs in
+   heuristic mode; with it, ambiguous checks get AI adjudication (prompt +
+   response stored per compliance row for audit).
 
 ## 3. Backend on Render — ~10 min
 

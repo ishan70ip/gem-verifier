@@ -68,12 +68,16 @@ Open http://localhost:5173 and log in (password for all: `Password123!`):
 7. Switch role: **vendor login** → submit a bid on a new tender, upload a PDF,
    watch it appear for the officer.
 
+Ready-to-upload sample PDFs live in **`demo-docs/`** (OEM letter that flips
+Brightline to ELIGIBLE, a tender notice, a weak bid for free-play) with a
+per-file guide in `demo-docs/README.md`.
+
 ## Optional: enable Gemini
 
 ```bash
 # backend/.env
 GEMINI_API_KEY=your-key-here
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.6-flash
 ```
 
 With a key, every analysis adds an LLM second opinion (`mode: gemini:…`,
