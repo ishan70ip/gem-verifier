@@ -80,6 +80,14 @@ With a key, every analysis adds an LLM second opinion (`mode: gemini:…`,
 shown in the UI and `/health`). Deterministic verdicts always take
 precedence; without a key the platform runs fully offline (`mode: heuristic`).
 
+## Production upgrade (Supabase + deploy)
+
+V1 runs offline by default. For the production path (cloud Postgres, cloud
+file storage, live dashboard, deploy): set `DB_MODE=supabase`, run
+`backend/supabase/schema.sql`, add keys — full step-by-step in
+**[DEPLOY.md](./DEPLOY.md)** (Supabase → Gemini → Render → Vercel, all free
+tier). No route or UI code changes between modes.
+
 ## Deploy
 
 - **Backend:** any Node host (Render/Railway/VPS): `npm install && npm run seed && npm start`

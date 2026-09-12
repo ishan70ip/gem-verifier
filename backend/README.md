@@ -4,12 +4,16 @@ Node.js + Express backend for the Officer Portal and Vendor Portal.
 
 ## Storage (V1)
 
-No external database. All records live in an embedded JSON file store
-(`src/db/store.js`, persisted to `./data/db.json`), which implements the same
-method surface the routes use (`find`, `findOne`, `create`, `insertMany`,
-`exists`, `countDocuments`, `findByIdAndUpdate`, `findOneAndUpdate`,
-`.sort().lean().limit()` chaining, document `save()`). Uploaded files stay on
-disk under `./uploads` (metadata only in the DB).
+Two modes, same API (selected by `DB_MODE`, see `src/db/models.js`):
+
+- `DB_MODE=file` (default): embedded JSON store (`src/db/store.js`,
+  persisted to `./data/db.json`) + uploads on local disk under `./uploads`.
+  Zero setup — the hackathon demo path.
+- `DB_MODE=supabase` (production): Postgres via `src/db/supabaseStore.js`
+  (run `supabase/schema.sql` once in the Supabase SQL editor) + uploads in
+  the `bid-uploads` storage bucket via `src/services/storage.js`.
+  Needs `SUPABASE_URL` + `SUPABASE_SERVICE_KEY`. The seed script works in
+  both modes (`DB_MODE=supabase npm run seed`).
 
 ## Run locally
 
@@ -67,9 +71,13 @@ returns `{ status, ai_enabled, ai_mode }`.
    warranty) + `mockPortals.js` cross-verification + deterministic
    pass/warning/fail rules, weighted 0–100 score, LOW/MEDIUM/HIGH/CRITICAL
    risk, ELIGIBLE/CONDITIONAL/NOT ELIGIBLE recommendation.
-4. `gemini.js` — optional LLM second opinion appended to the recommendation
-   (never overrides deterministic verdicts).
-5. Results persisted as `compliance_results`; per-vendor summary stored on the
+4. `gemini.js` — optional LLM layer (needs `GEMINI_API_KEY`):
+   extraction second opinion per bid + **adjudication of ambiguous checks
+   only** (`needs_review` → compliant/non_compliant with stored prompt,
+   response, reasoning and quote). Deterministic verdicts are never
+   overturned; without a key the engine runs fully offline.
+5. Results persisted as `compliance_results` (including `geminiPrompt` /
+   `geminiResponse` for audit); per-vendor summary stored on the
    evaluation (`overallSummary` JSON) and every step audit-logged.
 
 `mockPortals.js` holds deterministic dummy registries matching the seed data.

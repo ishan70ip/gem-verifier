@@ -3,8 +3,8 @@
 // field extraction -> mock portal cross-verification -> deterministic rules
 // -> ComplianceResult rows + score/risk/recommendation on the Evaluation.
 import { extractTextFromFile } from "./extract.js";
-import { parseTenderThresholds, runComplianceForVendor, KEY_TO_REQ } from "./complianceEngine.js";
-import { geminiExtract, geminiMode } from "./gemini.js";
+import { parseTenderThresholds, runComplianceForVendor, scoreVerdict, KEY_TO_REQ } from "./complianceEngine.js";
+import { geminiExtract, geminiAdjudicate, geminiMode } from "./gemini.js";
 import {
   Bid,
   ComplianceResult,
@@ -131,6 +131,34 @@ export async function analyzeEvaluation(evaluationId, actor) {
       verdict.recommendation += ` AI note: ${llm.oneLineSummary}`;
     }
 
+    // Gemini adjudication: resolve AMBIGUOUS checks only. Deterministic
+    // compliant/non_compliant verdicts are never touched.
+    if (mode !== "heuristic") {
+      for (const check of verdict.checks) {
+        if (check.status !== "needs_review") continue;
+        const ai = await geminiAdjudicate({
+          requirementTitle: check.requirementTitle || check.key,
+          requirementDesc: requirements.find((r) => (r._id || r.id) === check.requirementId)?.description || "",
+          currentEvidence: check.evidenceText,
+          docText,
+        });
+        check.geminiPrompt = ai?.prompt || null;
+        check.geminiResponse = ai?.response || ai?.raw || ai?.error || null;
+        if (ai && !ai.error && (ai.verdict === "compliant" || ai.verdict === "non_compliant")) {
+          check.status = ai.verdict;
+          check.confidence = ai.confidence;
+          if (ai.quote) {
+            check.exactQuote = ai.quote;
+            check.evidenceText = `Gemini-verified: "${ai.quote}"`;
+          }
+          check.explanation = `AI adjudication (${ai.model}): ${ai.reasoning}`;
+          check.determinationSource = "ai-gemini-adjudicated";
+        }
+      }
+      // Recompute score/risk/recommendation after adjudication upgrades.
+      Object.assign(verdict, scoreVerdict(verdict.checks, vendor));
+    }
+
     const rows = verdict.checks.map((check) => ({
       evaluationId: ev._id,
       tenderId: tender._id,
@@ -143,7 +171,9 @@ export async function analyzeEvaluation(evaluationId, actor) {
       pageNumber: null,
       explanation: check.explanation,
       confidence: check.confidence,
-      determinationSource: mode.startsWith("gemini") ? "ai-gemini" : "ai-heuristic",
+      determinationSource: check.determinationSource || (mode.startsWith("gemini") ? "ai-gemini" : "ai-heuristic"),
+      geminiPrompt: check.geminiPrompt || null,
+      geminiResponse: check.geminiResponse || null,
       humanReviewed: false,
     }));
     await ComplianceResult.insertMany(rows);

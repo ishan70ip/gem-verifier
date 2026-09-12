@@ -3,6 +3,7 @@ import AppShell from "../components/AppShell";
 import StatusBadge from "../components/StatusBadge";
 import { Link } from "react-router-dom";
 import { apiRequest } from "../services/apiClient";
+import { subscribeToTable, isRealtimeEnabled } from "../lib/supabase";
 import { ArrowRight, ArrowUpRight, FilePlus2, FolderOpen, UsersRound, Search, ShieldCheck, Sparkles, Activity, FileText, Clock } from "lucide-react";
 
 const services = [
@@ -38,6 +39,13 @@ export default function Dashboard() {
       }
     }
     loadDashboardData();
+    // Live updates when Supabase Realtime is configured: a vendor submitting
+    // a bid on another device refreshes this dashboard with no reload.
+    if (!isRealtimeEnabled()) return undefined;
+    const refresh = () => loadDashboardData();
+    const offBids = subscribeToTable("bids", refresh);
+    const offEvals = subscribeToTable("evaluations", refresh);
+    return () => { offBids(); offEvals(); };
   }, []);
 
   return (
@@ -75,7 +83,7 @@ export default function Dashboard() {
             <h2>Your procurement workspace</h2>
           </div>
           <div className="portal-date">
-            <span className="live-dot" /> Central MongoDB connected
+            <span className="live-dot" /> {isRealtimeEnabled() ? "Live sync connected" : "System operational"}
           </div>
         </div>
 

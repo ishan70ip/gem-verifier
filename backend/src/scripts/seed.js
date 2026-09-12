@@ -2,11 +2,9 @@
 // with statutory + technical requirements, submitted bids with generated
 // sample PDFs, so the end-to-end verification flow works immediately after
 // `npm run seed` with no manual uploads needed.
-import fs from "node:fs";
-import path from "node:path";
 import bcrypt from "bcryptjs";
 import { connectDatabase, User, Vendor, Tender, Requirement, Bid, Document } from "../db/models.js";
-import { config } from "../config/index.js";
+import { saveBuffer } from "../services/storage.js";
 
 // Minimal single-page text PDF writer (no dependencies).
 function makePdf(lines) {
@@ -169,8 +167,6 @@ export async function seedDatabase() {
     console.log("Inserted", REQUIREMENTS.length, "tender requirements");
   }
 
-  fs.mkdirSync(config.uploadDir, { recursive: true });
-
   for (const v of VENDORS) {
     const user = await ensureUser(v.email, "vendor");
     let profile = await Vendor.findOne({ userId: user._id });
@@ -202,22 +198,19 @@ export async function seedDatabase() {
     const bidPlain = bid.toObject ? bid.toObject() : bid;
 
     const filename = `${v.vendorCode}-technical-bid.pdf`;
-    const storagePath = path.join(config.uploadDir, filename);
-    if (!fs.existsSync(storagePath)) {
-      fs.writeFileSync(storagePath, makePdf(v.docLines));
-      console.log("Generated sample PDF:", filename);
-    }
     const existingDoc = await Document.findOne({ bidId: bidPlain._id });
     if (!existingDoc) {
+      const stored = await saveBuffer(filename, makePdf(v.docLines), "application/pdf");
+      console.log("Generated sample PDF:", filename);
       await Document.create({
         bidId: bidPlain._id,
         tenderId: tenderPlain._id,
         vendorId: profilePlain._id,
         documentType: "Technical Proposal",
         originalFilename: filename,
-        storagePath,
+        storagePath: stored.storagePath,
         mimeType: "application/pdf",
-        fileSize: fs.statSync(storagePath).size,
+        fileSize: stored.fileSize,
         uploadedBy: user._id,
         visibility: "vendor_and_officer",
         status: "ACTIVE",

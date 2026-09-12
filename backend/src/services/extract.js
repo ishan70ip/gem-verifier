@@ -6,7 +6,7 @@
 //   crashes; the extraction method is recorded for auditability.
 // (Real OCR for scanned images, e.g. Tesseract, is a documented V2 step;
 //  for V1, vendors upload text PDFs which this handles fully.)
-import fs from "node:fs/promises";
+import { readFile } from "./storage.js";
 
 function looksLikePdf(buffer) {
   return buffer.length > 4 && buffer.subarray(0, 4).toString() === "%PDF";
@@ -37,7 +37,7 @@ async function parsePdf(buffer) {
 }
 
 export async function extractTextFromFile(storagePath, { mimeType = "", originalFilename = "" } = {}) {
-  const buffer = await fs.readFile(storagePath);
+  const buffer = await readFile(storagePath);
   const name = (originalFilename || storagePath).toLowerCase();
 
   if (looksLikePdf(buffer) || mimeType.includes("pdf") || name.endsWith(".pdf")) {
