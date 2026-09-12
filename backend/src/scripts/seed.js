@@ -2,6 +2,7 @@
 // with statutory + technical requirements, submitted bids with generated
 // sample PDFs, so the end-to-end verification flow works immediately after
 // `npm run seed` with no manual uploads needed.
+import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { connectDatabase, User, Vendor, Tender, Requirement, Bid, Document } from "../db/models.js";
 import { saveBuffer } from "../services/storage.js";

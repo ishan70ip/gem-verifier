@@ -126,7 +126,9 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   "entityType" TEXT,
   "entityId" UUID,
   metadata JSONB DEFAULT '{}'::jsonb,
-  timestamp TIMESTAMPTZ DEFAULT NOW()
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_logs("entityType", "entityId", timestamp DESC);
 
@@ -145,7 +147,9 @@ CREATE TABLE IF NOT EXISTS documents (
   "uploadedBy" UUID,
   visibility TEXT,
   status TEXT,
-  "uploadedAt" TIMESTAMPTZ
+  "uploadedAt" TIMESTAMPTZ,
+  "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_documents_bid ON documents("bidId", "tenderId", "vendorId", "evaluationId");
 
