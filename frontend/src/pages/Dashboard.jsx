@@ -201,23 +201,23 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {tenders.map((t) => (
-                    <tr key={t.id || t._id}>
+                  {tenders.map((tender) => (
+                    <tr key={tender.id || tender._id}>
                       <td>
-                        <strong>{t.referenceNumber || t.tenderRef || t.id}</strong>
+                        <strong>{tender.referenceNumber || tender.tenderRef || tender.id}</strong>
                       </td>
-                      <td>{t.title || t.name}</td>
-                      <td>{t.department}</td>
+                      <td>{tender.title || tender.name}</td>
+                      <td>{tender.department}</td>
                       <td>
-                        <StatusBadge status={t.status} />
+                        <StatusBadge status={tender.status} />
                       </td>
                       <td>
-                        {t.submissionDeadline || t.deadline
-                          ? new Date(t.submissionDeadline || t.deadline).toLocaleDateString()
+                        {tender.submissionDeadline || tender.deadline
+                          ? new Date(tender.submissionDeadline || tender.deadline).toLocaleDateString()
                           : t("dash.na")}
                       </td>
                       <td>
-                        <Link to={`/tenders/${t.id || t._id}`} className="table-action-link">
+                        <Link to={`/tenders/${tender.id || tender._id}`} className="table-action-link">
                           {t("dash.viewTender")} <ArrowRight size={14} />
                         </Link>
                       </td>
