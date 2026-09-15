@@ -48,7 +48,36 @@ router.get("/auth/me", auth, asyncRoute(async (req, res) => {
 }));
 
 // 12.3 Officer Portal - Tenders
-router.get("/tenders", ...officer, asyncRoute(async (_req, res) => res.json((await Tender.find().sort({ updatedAt: -1 }).lean()).map(clean))));
+router.get("/tenders", ...officer, asyncRoute(async (_req, res) => {
+  const tenders = await Tender.find().sort({ updatedAt: -1 }).lean();
+  const tenderIds = tenders.map(t => t._id);
+  
+  const [bids, requirements, results] = await Promise.all([
+    Bid.find({ tenderId: { $in: tenderIds } }).lean(),
+    Requirement.find({ tenderId: { $in: tenderIds } }).lean(),
+    ComplianceResult.find({ tenderId: { $in: tenderIds } }).lean()
+  ]);
+
+  const payload = tenders.map(tender => {
+    const tBids = bids.filter(b => String(b.tenderId) === String(tender._id));
+    const tReqs = requirements.filter(r => String(r.tenderId) === String(tender._id));
+    const tResults = results.filter(r => String(r.tenderId) === String(tender._id));
+    const compliant = tResults.filter(r => r.status === "compliant" || r.status === "COMPLIANT").length;
+    
+    const compliancePercentage = tResults.length > 0 
+      ? Math.round((compliant / tResults.length) * 100) 
+      : null;
+      
+    return {
+      ...clean(tender),
+      totalBids: tBids.length,
+      requirementCount: tReqs.length,
+      compliancePercentage
+    };
+  });
+  
+  res.json(payload);
+}));
 router.post("/tenders", ...officer, asyncRoute(async (req, res) => {
   const { reference_number, title, department, description = "", submission_deadline, requirements = [] } = req.body;
   const tender = await Tender.create({ referenceNumber: reference_number, title, department, description, submissionDeadline: submission_deadline, status: "OPEN", createdBy: req.user.id });
@@ -98,10 +127,11 @@ router.get("/tenders/:id/vendors", ...officer, asyncRoute(async (req, res) => {
 // 12.3 Officer Portal - Evaluations & Compliance
 async function evaluationPayload(evaluation) {
   const tender = await Tender.findById(evaluation.tenderId).lean();
-  const [requirements, bids, results] = await Promise.all([
+  const [requirements, bids, results, documents] = await Promise.all([
     Requirement.find({ tenderId: evaluation.tenderId }).sort({ requirementOrder: 1 }).lean(),
     Bid.find({ tenderId: evaluation.tenderId }).lean(),
     ComplianceResult.find({ evaluationId: evaluation._id }).lean(),
+    Document.find({ tenderId: evaluation.tenderId }).lean(),
   ]);
   const vendors = await Vendor.find({ _id: { $in: bids.map(bid => bid.vendorId) } }).lean();
   let summary = null;
@@ -109,6 +139,11 @@ async function evaluationPayload(evaluation) {
   return {
     evaluation: { ...clean(evaluation), title: tender?.title, tenderReference: tender?.referenceNumber, department: tender?.department, deadline: tender?.submissionDeadline, aiMode: summary?.mode || geminiMode(), lastProcessed: summary?.generatedAt || evaluation.updatedAt },
     requirements: requirements.map(clean),
+    // Every document tied to this tender (both the officer-uploaded notice
+    // and vendor bid submissions). Bid documents carry a bidId, so the
+    // frontend can filter to "documents submitted by this vendor" by
+    // matching document.bidId against each vendor's bid.id.
+    documents: documents.map(clean),
     summary,
     vendors: vendors.map(v => {
       const items = results.filter(r => r.vendorId === v._id);

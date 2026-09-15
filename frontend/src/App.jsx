@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { LanguageProvider } from "./context/LanguageContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import LoginPage from "./pages/LoginPage";
 import VendorDashboard from "./pages/VendorDashboard";
@@ -38,102 +39,104 @@ function ProtectedRoute({ children, allowedRole }) {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              path="/vendor/dashboard"
-              element={
-                <ProtectedRoute allowedRole="vendor">
-                  <VendorDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute allowedRole="officer">
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tenders"
-              element={
-                <ProtectedRoute allowedRole="officer">
-                  <TendersPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tenders/new"
-              element={
-                <ProtectedRoute allowedRole="officer">
-                  <NewTenderPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tenders/:id"
-              element={
-                <ProtectedRoute allowedRole="officer">
-                  <TenderDetailPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/bids/:id"
-              element={
-                <ProtectedRoute allowedRole="officer">
-                  <EvaluationPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/evaluations/:id"
-              element={
-                <ProtectedRoute allowedRole="officer">
-                  <EvaluationPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/vendors"
-              element={
-                <ProtectedRoute allowedRole="officer">
-                  <VendorsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/vendors/:id"
-              element={
-                <ProtectedRoute allowedRole="officer">
-                  <VendorProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/awards/:id"
-              element={
-                <ProtectedRoute allowedRole="officer">
-                  <ContractAwardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/contracts/:id"
-              element={
-                <ProtectedRoute allowedRole="officer">
-                  <ContractDetailsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/vendor/dashboard"
+                element={
+                  <ProtectedRoute allowedRole="vendor">
+                    <VendorDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute allowedRole="officer">
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tenders"
+                element={
+                  <ProtectedRoute allowedRole="officer">
+                    <TendersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tenders/new"
+                element={
+                  <ProtectedRoute allowedRole="officer">
+                    <NewTenderPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tenders/:id"
+                element={
+                  <ProtectedRoute allowedRole="officer">
+                    <TenderDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/bids/:id"
+                element={
+                  <ProtectedRoute allowedRole="officer">
+                    <EvaluationPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/evaluations/:id"
+                element={
+                  <ProtectedRoute allowedRole="officer">
+                    <EvaluationPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendors"
+                element={
+                  <ProtectedRoute allowedRole="officer">
+                    <VendorsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendors/:id"
+                element={
+                  <ProtectedRoute allowedRole="officer">
+                    <VendorProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/awards/:id"
+                element={
+                  <ProtectedRoute allowedRole="officer">
+                    <ContractAwardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/contracts/:id"
+                element={
+                  <ProtectedRoute allowedRole="officer">
+                    <ContractDetailsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   );
 }
