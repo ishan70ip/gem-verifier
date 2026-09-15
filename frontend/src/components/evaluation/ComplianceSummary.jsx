@@ -1,6 +1,8 @@
 import { AlertTriangle, CheckCircle2, FileText, UsersRound } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 function VendorSummary({ vendor, docs, onOpen, onViewDocuments }) {
+  const { t } = useLanguage();
   const review = vendor.compliancePercentage < 90;
 
   return (
@@ -21,11 +23,11 @@ function VendorSummary({ vendor, docs, onOpen, onViewDocuments }) {
             className="vendor-doc-btn"
             onClick={event => { event.stopPropagation(); onViewDocuments(docs); }}
           >
-            <FileText size={11} /> Documents{docs.length ? ` (${docs.length})` : ""}
+            <FileText size={11} /> {t("evalSummary.documents")}{docs.length ? ` (${docs.length})` : ""}
           </button>
           <span className="vendor-status">
             {review ? <AlertTriangle size={12} /> : <CheckCircle2 size={12} />}
-            {review ? "Needs review" : "Compliant"}
+            {review ? t("evalSummary.needsReview") : t("evalSummary.compliant")}
           </span>
         </span>
       </div>
@@ -34,7 +36,7 @@ function VendorSummary({ vendor, docs, onOpen, onViewDocuments }) {
 
       <div className="vendor-score-new">
         <strong>{vendor.compliancePercentage}%</strong>
-        <span>overall compliance{vendor.riskLevel ? ` · ${vendor.riskLevel} risk` : ""}</span>
+        <span>{t("evalSummary.overallCompliance")}{vendor.riskLevel ? ` · ${vendor.riskLevel} ${t("evalSummary.riskUnit")}` : ""}</span>
       </div>
 
       <div className="vendor-bar-new">
@@ -48,7 +50,7 @@ function VendorSummary({ vendor, docs, onOpen, onViewDocuments }) {
         </small>
       ) : null}
 
-      <small>Open vendor evaluation <span>→</span></small>
+      <small>{t("evalSummary.openVendor")} <span>→</span></small>
     </div>
   );
 }
@@ -62,6 +64,7 @@ export default function ComplianceSummary({
   onOpenVendor,
   onViewVendorDocuments,
 }) {
+  const { t } = useLanguage();
   const compliant = results.filter(result => result.status === "COMPLIANT").length;
   const needsReview = results.filter(
     result => result.status === "FLAG_FOR_REVIEW" || result.status === "NOT_FOUND"
@@ -72,13 +75,13 @@ export default function ComplianceSummary({
     <section className="summary-section-new">
       <div className="summary-title-new">
         <div>
-          <div className="section-kicker">COMPLIANCE SUMMARY</div>
-          <h2>Overall evaluation status</h2>
+          <div className="section-kicker">{t("evalSummary.kicker")}</div>
+          <h2>{t("evalSummary.title")}</h2>
         </div>
         <span>
           {lastProcessed
-            ? `Last processed: ${lastProcessed}`
-            : "Processing status unavailable"}
+            ? `${t("evalSummary.lastProcessedLabel")} ${lastProcessed}`
+            : t("evalSummary.processingUnavailable")}
         </span>
       </div>
 
@@ -86,26 +89,26 @@ export default function ComplianceSummary({
         <div>
           <UsersRound size={16} />
           <strong>{vendors.length}</strong>
-          <span>Vendors</span>
+          <span>{t("evalSummary.vendors")}</span>
         </div>
         <div>
           <CheckCircle2 size={16} />
           <strong>{requirements.length}</strong>
-          <span>Requirements</span>
+          <span>{t("evalSummary.requirements")}</span>
         </div>
         <div>
           <CheckCircle2 size={16} />
           <strong>{compliant}</strong>
-          <span>Compliant</span>
+          <span>{t("evalSummary.compliant")}</span>
         </div>
         <div>
           <AlertTriangle size={16} />
           <strong>{needsReview}</strong>
-          <span>Needs review</span>
+          <span>{t("evalSummary.needsReview")}</span>
         </div>
         <div className="overall-score">
           <strong>{overall}%</strong>
-          <span>Overall compliance</span>
+          <span>{t("evalSummary.overallComplianceMetric")}</span>
         </div>
       </div>
 

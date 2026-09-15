@@ -9,8 +9,10 @@ import VendorDocumentsDrawer from "@/components/evaluation/VendorDocumentsDrawer
 import DocumentPreviewModal from "@/components/evaluation/DocumentPreviewModal";
 import { completeEvaluation, getEvaluationById, resolveComplianceResult, runAiAnalysis, downloadReportCsv } from "@/services/evaluationService";
 import { Sparkles, Download } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function EvaluationPage() {
+  const { t } = useLanguage();
   const { id } = useParams();
   const [data, setData] = useState(null);
   const [loaded, setLoaded] = useState(false);
@@ -36,8 +38,8 @@ export default function EvaluationPage() {
     [data, resolvedResults]
   );
 
-  if (!loaded) return <AppShell><div className="page-content"><div className="card"><div className="empty-state"><h3>Loading evaluation</h3><p>Retrieving compliance results from the procurement database.</p></div></div></div></AppShell>;
-  if (!data) return <AppShell><div className="page-content"><div className="card"><div className="empty-state"><h3>Evaluation not available</h3><p>This evaluation could not be found.</p><Link to="/tenders" className="btn btn-primary">Back to evaluations</Link></div></div></div></AppShell>;
+  if (!loaded) return <AppShell><div className="page-content"><div className="card"><div className="empty-state"><h3>{t("eval.loadingTitle")}</h3><p>{t("eval.loadingDesc")}</p></div></div></div></AppShell>;
+  if (!data) return <AppShell><div className="page-content"><div className="card"><div className="empty-state"><h3>{t("eval.unavailableTitle")}</h3><p>{t("eval.unavailableDesc")}</p><Link to="/tenders" className="btn btn-primary">{t("eval.backToEvaluations")}</Link></div></div></div></AppShell>;
 
   const selectedRequirement = selectedResult && (data.requirements || []).find(requirement => requirement.id === selectedResult.requirementId);
   const selectedVendorData = selectedResult && (data.vendors || []).find(vendor => vendor.id === selectedResult.vendorId);
@@ -63,7 +65,7 @@ export default function EvaluationPage() {
       setData(updated);
       setResolvedResults({});
     } catch (err) {
-      setError(err.message || "AI analysis failed");
+      setError(err.message || t("eval.aiAnalysisFailed"));
     } finally {
       setBusy("");
     }
@@ -91,19 +93,19 @@ export default function EvaluationPage() {
         {error && <div className="alert alert-error" style={{ margin: "0 0 12px" }}>{error}</div>}
 
         <div className="pipeline-strip-new">
-          <span>✓ Documents processed</span><i /><span>✓ Requirements extracted</span><i /><span>✓ Vendor bids analyzed</span><i />
-          <span>{data.evaluation.status === "CONTRACT_AWARDED" || data.evaluation.status === "AWARDED" ? "✓ Contract awarded" : data.evaluation.status === "EVALUATION_COMPLETED" || data.evaluation.status === "COMPLETED" ? "✓ Evaluation complete" : "○ Evaluation pending"}</span>
+          <span>{t("eval.stepDocs")}</span><i /><span>{t("eval.stepRequirements")}</span><i /><span>{t("eval.stepBids")}</span><i />
+          <span>{data.evaluation.status === "CONTRACT_AWARDED" || data.evaluation.status === "AWARDED" ? t("eval.stepAwarded") : data.evaluation.status === "EVALUATION_COMPLETED" || data.evaluation.status === "COMPLETED" ? t("eval.stepComplete") : t("eval.stepPending")}</span>
         </div>
 
         {results.length === 0 && (
           <div className="card" style={{ marginBottom: 16 }}>
             <div className="card-body" style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
               <div style={{ fontSize: 13.5 }}>
-                <b>No verification results yet.</b>
-                <div style={{ color: "var(--text-secondary)", marginTop: 4 }}>Run the AI verification pipeline to parse bid PDFs, cross-check portal records and score every vendor.</div>
+                <b>{t("eval.noResultsTitle")}</b>
+                <div style={{ color: "var(--text-secondary)", marginTop: 4 }}>{t("eval.noResultsDesc")}</div>
               </div>
               <button className="btn btn-primary" onClick={handleRunAnalysis} disabled={busy === "analyze"}>
-                <Sparkles size={15} /> {busy === "analyze" ? "Analysing bids…" : "Run AI verification"}
+                <Sparkles size={15} /> {busy === "analyze" ? t("eval.analysing") : t("eval.runVerification")}
               </button>
             </div>
           </div>
@@ -112,9 +114,9 @@ export default function EvaluationPage() {
         {data.summary?.vendors && (
           <div className="card" style={{ marginBottom: 16 }}>
             <div className="card-header">
-              <div className="card-header-title">AI recommendation {aiMode ? <span className="chip" style={{ marginLeft: 6 }}>mode: {aiMode}</span> : null}</div>
+              <div className="card-header-title">{t("eval.aiRecommendation")} {aiMode ? <span className="chip" style={{ marginLeft: 6 }}>{t("eval.modeLabel")} {aiMode}</span> : null}</div>
               <button className="btn btn-ghost" onClick={handleDownload} disabled={busy === "csv"}>
-                <Download size={14} /> {busy === "csv" ? "Preparing…" : "Export CSV report"}
+                <Download size={14} /> {busy === "csv" ? t("eval.preparing") : t("eval.exportCsv")}
               </button>
             </div>
             <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -122,8 +124,8 @@ export default function EvaluationPage() {
                 <div key={vendor.id} style={{ padding: "10px 12px", background: "#F8FAFC", border: "1px solid var(--border-light)", borderRadius: 6, fontSize: 13 }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                     <b>{vendor.name}</b>
-                    <span className="chip">{vendor.compliancePercentage}% score</span>
-                    {vendor.riskLevel && <span className="chip">Risk: {vendor.riskLevel}</span>}
+                    <span className="chip">{vendor.compliancePercentage}% {t("eval.scoreUnit")}</span>
+                    {vendor.riskLevel && <span className="chip">{t("eval.riskLabel")} {vendor.riskLevel}</span>}
                     <span className="chip">{vendor.eligibility?.replace("_", " ")}</span>
                   </div>
                   <div style={{ color: "var(--text-secondary)", marginTop: 5, lineHeight: 1.55 }}>{vendor.recommendation}</div>
@@ -131,7 +133,7 @@ export default function EvaluationPage() {
               ))}
               {results.length > 0 && (
                 <button className="btn btn-ghost" style={{ alignSelf: "flex-start" }} onClick={handleRunAnalysis} disabled={busy === "analyze"}>
-                  <Sparkles size={14} /> {busy === "analyze" ? "Re-analysing…" : "Re-run AI verification"}
+                  <Sparkles size={14} /> {busy === "analyze" ? t("eval.reanalysing") : t("eval.rerunVerification")}
                 </button>
               )}
             </div>
@@ -149,11 +151,11 @@ export default function EvaluationPage() {
           <div>
             <span className="review-queue-icon">⚠</span>
             <span>
-              <b>{needsReview} requirements need your attention</b>
-              <small>{data.evaluation.status === "CONTRACT_AWARDED" || data.evaluation.status === "AWARDED" ? "This evaluation is read-only after contract assignment." : needsReview ? "Resolve every uncertain result before completing the evaluation." : "All requirement decisions are ready for completion."}</small>
+              <b>{needsReview} {t("eval.needsAttention")}</b>
+              <small>{data.evaluation.status === "CONTRACT_AWARDED" || data.evaluation.status === "AWARDED" ? t("eval.readOnlyNote") : needsReview ? t("eval.resolveNote") : t("eval.readyNote")}</small>
             </span>
           </div>
-          <button onClick={() => setFilter("NEEDS_REVIEW")}>Open review queue →</button>
+          <button onClick={() => setFilter("NEEDS_REVIEW")}>{t("eval.openReviewQueue")}</button>
         </section>
 
         <ComplianceMatrix requirements={data.requirements || []} vendors={data.vendors || []} results={results} filter={filter} setFilter={setFilter} query={query} setQuery={setQuery} selectedVendor={selectedVendor} setSelectedVendor={setSelectedVendor} mandatoryOnly={mandatoryOnly} setMandatoryOnly={setMandatoryOnly} onSelect={setSelectedResult} />

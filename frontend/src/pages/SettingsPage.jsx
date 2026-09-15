@@ -1,6 +1,7 @@
 import AppShell from "@/components/AppShell";
 import { Link } from "react-router-dom";
 import { Key, Shield, Globe } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 function Section({ icon, title, children }) {
   return (
@@ -26,34 +27,35 @@ function Row({ label, desc, val, valColor = "var(--gem-navy)" }) {
 }
 
 export default function SettingsPage() {
+  const { t } = useLanguage();
   return (
     <AppShell>
       <div className="page-bar">
         <div>
-          <div className="page-title">Settings</div>
+          <div className="page-title">{t("settings.title")}</div>
           <div className="breadcrumb" style={{ marginTop: 2 }}>
-            <Link to="/">Home</Link><span className="breadcrumb-sep">/</span><span>Settings</span>
+            <Link to="/">{t("settings.home")}</Link><span className="breadcrumb-sep">/</span><span>{t("settings.title")}</span>
           </div>
         </div>
       </div>
 
       <div className="page-content" style={{ maxWidth: 640, display: "flex", flexDirection: "column", gap: 16 }}>
-        <Section icon={<Key size={15} />} title="AI Engine Configuration">
-          <Row label="LLM Provider"          desc="AI model used for document extraction"                         val="Google Gemini 1.5 Pro" />
-          <Row label="Confidence Threshold"  desc="Parameters below this score are flagged for manual review"    val="80%" />
-          <Row label="Max Document Pages"    desc="Maximum pages processed per document"                         val="200" />
+        <Section icon={<Key size={15} />} title={t("settings.aiTitle")}>
+          <Row label={t("settings.llmLabel")}          desc={t("settings.llmDesc")}                         val="Google Gemini 1.5 Pro" />
+          <Row label={t("settings.thresholdLabel")}  desc={t("settings.thresholdDesc")}    val="80%" />
+          <Row label={t("settings.maxPagesLabel")}    desc={t("settings.maxPagesDesc")}                         val="200" />
         </Section>
 
-        <Section icon={<Shield size={15} />} title="Security & Privacy">
-          <Row label="Data Retention Policy" desc="Documents processed in-memory, never persisted to disk"   val="Zero Retention"  valColor="var(--status-green)" />
-          <Row label="Encryption Standard"   desc="All uploads are end-to-end encrypted in transit"          val="TLS 1.3 / AES-256" valColor="var(--status-green)" />
-          <Row label="Audit Trail"           desc="All AI decisions are immutably logged for compliance"      val="Enabled"         valColor="var(--status-green)" />
+        <Section icon={<Shield size={15} />} title={t("settings.securityTitle")}>
+          <Row label={t("settings.retentionLabel")} desc={t("settings.retentionDesc")}   val={t("settings.retentionVal")}  valColor="var(--status-green)" />
+          <Row label={t("settings.encryptionLabel")}   desc={t("settings.encryptionDesc")}          val="TLS 1.3 / AES-256" valColor="var(--status-green)" />
+          <Row label={t("settings.auditLabel")}           desc={t("settings.auditDesc")}      val={t("settings.enabledVal")}         valColor="var(--status-green)" />
         </Section>
 
-        <Section icon={<Globe size={15} />} title="GeM Portal Integration">
-          <Row label="GeM API Endpoint"      desc="Government e-Marketplace API base URL"                  val="https://gem.gov.in/api/v3" />
-          <Row label="Integration Mode"      desc="Connection to live GeM procurement portal"              val="Demo Mode"   valColor="var(--status-amber)" />
-          <Row label="SIH Problem Statement" desc="Smart India Hackathon 2026"                              val="#SIH26100" />
+        <Section icon={<Globe size={15} />} title={t("settings.gemTitle")}>
+          <Row label={t("settings.endpointLabel")}      desc={t("settings.endpointDesc")}                  val="https://gem.gov.in/api/v3" />
+          <Row label={t("settings.modeLabel")}      desc={t("settings.modeDesc")}              val={t("settings.demoVal")}   valColor="var(--status-amber)" />
+          <Row label={t("settings.sihLabel")} desc={t("settings.sihDesc")}                              val="#SIH26100" />
         </Section>
       </div>
     </AppShell>

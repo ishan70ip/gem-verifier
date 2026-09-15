@@ -7,14 +7,13 @@ import { subscribeToTable, isRealtimeEnabled } from "../lib/supabase";
 import { useLanguage } from "../context/LanguageContext";
 import { ArrowRight, ArrowUpRight, FilePlus2, FolderOpen, UsersRound, ShieldCheck, Sparkles, Activity, FileText } from "lucide-react";
 
-const services = [
-  { icon: FilePlus2, label: "New evaluation", text: "Start with a GeM tender", to: "/tenders/new", tone: "orange" },
-  { icon: FolderOpen, label: "Evaluations", text: "Review completed work", to: "/tenders", tone: "blue" },
-  { icon: UsersRound, label: "Vendors", text: "View awarded vendors", to: "/vendors", tone: "green" },
-];
-
 export default function Dashboard() {
   const { t } = useLanguage();
+  const services = [
+    { icon: FilePlus2, label: t("dash.svcNewLabel"), text: t("dash.svcNewText"), to: "/tenders/new", tone: "orange" },
+    { icon: FolderOpen, label: t("dash.svcEvalLabel"), text: t("dash.svcEvalText"), to: "/tenders", tone: "blue" },
+    { icon: UsersRound, label: t("dash.svcVendorsLabel"), text: t("dash.svcVendorsText"), to: "/vendors", tone: "green" },
+  ];
   const [stats, setStats] = useState({ tenders: 0, evaluations: 0, in_progress: 0, needs_review: 0, awards: 0 });
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,11 +89,11 @@ export default function Dashboard() {
               <div>
                 <span className="surface-index">01</span>
                 <div>
-                  <div className="section-kicker">CORE SERVICES</div>
-                  <h3>What would you like to do today?</h3>
+                  <div className="section-kicker">{t("dash.coreServices")}</div>
+                  <h3>{t("dash.whatToday")}</h3>
                 </div>
               </div>
-              <span className="surface-caption">A clear starting point for every evaluation</span>
+              <span className="surface-caption">{t("dash.clearStart")}</span>
             </div>
             <div className="service-tiles">
               {services.map(({ icon: Icon, label, text, to, tone }) => (
@@ -115,11 +114,11 @@ export default function Dashboard() {
                 <FilePlus2 size={22} />
               </span>
               <span>
-                <b>Create a new evaluation</b>
-                <small>Register a tender and review vendor submissions received through the vendor portal.</small>
+                <b>{t("dash.createNew")}</b>
+                <small>{t("dash.createNewDesc")}</small>
               </span>
               <span className="featured-cta">
-                Begin <ArrowRight size={15} />
+                {t("dash.begin")} <ArrowRight size={15} />
               </span>
             </Link>
           </div>
@@ -128,17 +127,17 @@ export default function Dashboard() {
             <div className="today-card">
               <div className="today-top">
                 <span className="surface-index">02</span>
-                <span className="section-kicker">DATA STATUS</span>
+                <span className="section-kicker">{t("dash.dataStatus")}</span>
               </div>
               <div className="today-number">{stats.needs_review}</div>
-              <h3>Items Needing Review</h3>
-              <p>Compliance items requiring officer resolution.</p>
+              <h3>{t("dash.needingReview")}</h3>
+              <p>{t("dash.needingReviewDesc")}</p>
               <Link to="/tenders" className="light-link">
-                Open evaluations <ArrowRight size={14} />
+                {t("dash.openEvaluations")} <ArrowRight size={14} />
               </Link>
               <div className="review-foot">
-                <span>Human-in-the-loop</span>
-                <span>Active Database</span>
+                <span>{t("dash.humanLoop")}</span>
+                <span>{t("dash.activeDb")}</span>
               </div>
             </div>
           </aside>
@@ -149,35 +148,35 @@ export default function Dashboard() {
             <div>
               <span className="surface-index">03</span>
               <div>
-                <div className="section-kicker">WORKSPACE ACTIVITY</div>
-                <h3>Recent evaluations &amp; tenders</h3>
+                <div className="section-kicker">{t("dash.workspaceActivity")}</div>
+                <h3>{t("dash.recentTitle")}</h3>
               </div>
             </div>
             <Link to="/tenders" className="surface-link">
-              View all evaluations <ArrowRight size={15} />
+              {t("dash.viewAll")} <ArrowRight size={15} />
             </Link>
           </div>
           <div className="activity-strip">
             <div>
               <FileText size={16} />
               <b>{stats.tenders}</b>
-              <span>Total Tenders</span>
+              <span>{t("dash.totalTenders")}</span>
             </div>
             <div>
               <Activity size={16} />
               <b>{stats.evaluations}</b>
-              <span>Active Evaluations</span>
+              <span>{t("dash.activeEvaluations")}</span>
             </div>
             <div>
               <ShieldCheck size={16} />
               <b>{stats.awards}</b>
-              <span>Awarded Contracts</span>
+              <span>{t("dash.awardedContracts")}</span>
             </div>
             <div className="activity-note">
               <Activity size={16} />
               <span>
-                Database Sync<br />
-                <b>Operational</b>
+                {t("dash.dbSync")}<br />
+                <b>{t("dash.operational")}</b>
               </span>
             </div>
           </div>
@@ -186,19 +185,19 @@ export default function Dashboard() {
             {tenders.length === 0 ? (
               <div className="empty-state">
                 <FileText size={22} />
-                <h3>No recent tenders found</h3>
-                <p>Create a new tender to begin evaluating bid compliance.</p>
+                <h3>{t("dash.noTendersTitle")}</h3>
+                <p>{t("dash.noTendersDesc")}</p>
               </div>
             ) : (
               <table className="evaluations-table">
                 <thead>
                   <tr>
-                    <th>Reference No</th>
-                    <th>Tender Title</th>
-                    <th>Department</th>
-                    <th>Status</th>
-                    <th>Deadline</th>
-                    <th>Actions</th>
+                    <th>{t("dash.colRef")}</th>
+                    <th>{t("dash.colTitle")}</th>
+                    <th>{t("dash.colDept")}</th>
+                    <th>{t("dash.colStatus")}</th>
+                    <th>{t("dash.colDeadline")}</th>
+                    <th>{t("dash.colActions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -215,11 +214,11 @@ export default function Dashboard() {
                       <td>
                         {t.submissionDeadline || t.deadline
                           ? new Date(t.submissionDeadline || t.deadline).toLocaleDateString()
-                          : "N/A"}
+                          : t("dash.na")}
                       </td>
                       <td>
                         <Link to={`/tenders/${t.id || t._id}`} className="table-action-link">
-                          View Tender <ArrowRight size={14} />
+                          {t("dash.viewTender")} <ArrowRight size={14} />
                         </Link>
                       </td>
                     </tr>
@@ -235,10 +234,10 @@ export default function Dashboard() {
             <Sparkles size={18} />
           </div>
           <div>
-            <b>Evidence-based by design</b>
-            <span>Every decision connects the tender requirement to vendor evidence, source document and rule applied.</span>
+            <b>{t("dash.evidenceTitle")}</b>
+            <span>{t("dash.evidenceDesc")}</span>
           </div>
-          <Link to="/tenders">Explore the evidence chain <ArrowRight size={15} /></Link>
+          <Link to="/tenders">{t("dash.exploreEvidence")} <ArrowRight size={15} /></Link>
         </div>
       </section>
     </AppShell>

@@ -2,9 +2,10 @@ import AppShell from "@/components/AppShell";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { listActivity } from "@/services/procurementService";
+import { useLanguage } from "../context/LanguageContext";
 import { Activity, Brain, Upload, FileText, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 
-function buildTimeline(bid) {
+function buildTimeline(bid, translate) {
   const base = new Date(bid.uploadedAt);
   const t = (offsetSec) =>
     new Date(base.getTime() + offsetSec * 1000)
@@ -16,30 +17,31 @@ function buildTimeline(bid) {
 
   if (bid.status === "FAILED") {
     return [
-      { icon: Upload,       color: "var(--gem-navy)", label: "Bid document uploaded",  detail: bid.pdfName,                          time: t(0) },
-      { icon: FileText,     color: "#0369A1",         label: "Document parsing failed", detail: bid.failureReason ?? "Unknown error", time: t(8) },
+      { icon: Upload,       color: "var(--gem-navy)", label: translate("activity.uploaded"),  detail: bid.pdfName,                          time: t(0) },
+      { icon: FileText,     color: "#0369A1",         label: translate("activity.parseFailed"), detail: bid.failureReason ?? translate("activity.unknownError"), time: t(8) },
     ];
   }
 
   return [
-    { icon: Upload,       color: "var(--gem-navy)", label: "Bid document uploaded",          detail: bid.pdfName,                                    time: t(0) },
-    { icon: FileText,     color: "#0369A1",         label: "Document parsed",                detail: "47 pages processed · text extracted",           time: t(6) },
-    { icon: Brain,        color: "#7C3AED",         label: "AI requirements extraction",     detail: `${aiParams.length} parameters identified`,     time: t(44) },
-    { icon: CheckCircle2, color: "#15803D",         label: "Compliance verification completed", detail: `${compliant} satisfied · ${flagged} flagged`, time: t(62) },
-    ...(flagged > 0 ? [{ icon: AlertTriangle, color: "#B45309", label: "Human review status assigned", detail: `${flagged} parameter(s) require manual verification`, time: t(63) }] : []),
+    { icon: Upload,       color: "var(--gem-navy)", label: translate("activity.uploaded"),          detail: bid.pdfName,                                    time: t(0) },
+    { icon: FileText,     color: "#0369A1",         label: translate("activity.parsed"),                detail: translate("activity.pagesProcessed"),           time: t(6) },
+    { icon: Brain,        color: "#7C3AED",         label: translate("activity.aiExtraction"),     detail: `${aiParams.length} ${translate("activity.parametersIdentified")}`,     time: t(44) },
+    { icon: CheckCircle2, color: "#15803D",         label: translate("activity.verificationDone"), detail: `${compliant} ${translate("activity.satisfied")} · ${flagged} ${translate("activity.flagged")}`, time: t(62) },
+    ...(flagged > 0 ? [{ icon: AlertTriangle, color: "#B45309", label: translate("activity.reviewAssigned"), detail: `${flagged} ${translate("activity.manualVerification")}`, time: t(63) }] : []),
   ];
 }
 
 export default function ActivityPage() {
+  const { t } = useLanguage();
   const [events, setEvents] = useState([]);
   useEffect(() => { listActivity().then(data => setEvents(Array.isArray(data) ? data : data?.items || [])).catch(() => setEvents([])); }, []);
   return (
     <AppShell>
       <div className="page-bar">
         <div>
-          <div className="page-title">AI Audit Log</div>
+          <div className="page-title">{t("activity.title")}</div>
           <div className="breadcrumb" style={{ marginTop: 2 }}>
-            <Link to="/">Home</Link><span className="breadcrumb-sep">/</span><span>Audit Log</span>
+            <Link to="/">{t("activity.home")}</Link><span className="breadcrumb-sep">/</span><span>{t("activity.crumb")}</span>
           </div>
         </div>
       </div>
@@ -48,17 +50,17 @@ export default function ActivityPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: "#F8FAFC", border: "1px solid var(--border-light)", borderLeft: "4px solid var(--gem-navy)", borderRadius: 6, marginBottom: 20 }}>
           <Activity size={14} color="var(--gem-navy)" style={{ flexShrink: 0 }} />
           <span style={{ fontSize: 13, color: "var(--text-body)", lineHeight: 1.5 }}>
-            Complete, immutable record of every AI extraction and verification event. Each entry is traceable to the original document.
+            {t("activity.banner")}
           </span>
           <span style={{ marginLeft: "auto", fontSize: 11.5, fontWeight: 700, padding: "3px 10px", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 4, color: "var(--gem-navy)", flexShrink: 0 }}>
-            {events.length} recorded event(s)
+            {events.length} {t("activity.recordedEvents")}
           </span>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {events.map(event => {
             const bid = event.bid || event;
-            const events = buildTimeline(bid);
+            const events = buildTimeline(bid, t);
             const overallColor = bid.overallCompliance === "COMPLIANT" ? "#15803D"
               : bid.overallCompliance === "NON_COMPLIANT" ? "#DC2626"
               : bid.status === "FAILED" ? "#6B7280" : "#B45309";
@@ -77,7 +79,7 @@ export default function ActivityPage() {
                       {bid.status === "FAILED" ? "FAILED" : bid.overallCompliance.replace("_", " ")}
                     </span>
                     {bid.status !== "FAILED" && (
-                      <Link to={`/bids/${bid.id}`} className="row-action">View Analysis →</Link>
+                      <Link to={`/bids/${bid.id}`} className="row-action">{t("activity.viewAnalysis")}</Link>
                     )}
                   </div>
                 </div>
