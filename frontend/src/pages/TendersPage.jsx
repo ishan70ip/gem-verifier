@@ -81,10 +81,10 @@ export default function TendersPage() {
     if (!tenders.length) return undefined;
     let cancelled = false;
     Promise.all(
-      tenders.map(t =>
-        apiRequest(`/tenders/${t.id}/vendors`)
-          .then(list => [t.id, (Array.isArray(list) ? list : []).map(v => v.legalName || v.name).filter(Boolean)])
-          .catch(() => [t.id, []])
+      tenders.map(tender =>
+        apiRequest(`/tenders/${tender.id}/vendors`)
+          .then(list => [tender.id, (Array.isArray(list) ? list : []).map(v => v.legalName || v.name).filter(Boolean)])
+          .catch(() => [tender.id, []])
       )
     ).then(entries => { if (!cancelled) setTenderVendorNames(Object.fromEntries(entries)); });
     return () => { cancelled = true; };
@@ -92,9 +92,9 @@ export default function TendersPage() {
 
   const normalizedQuery = query.trim().toLowerCase();
   const filteredTenders = normalizedQuery
-    ? tenders.filter(t => {
-      const vendorNames = tenderVendorNames[t.id] || [];
-      return [t.name, t.title, t.tenderRef, t.referenceNumber, t.department, t.id, ...vendorNames]
+    ? tenders.filter(tender => {
+      const vendorNames = tenderVendorNames[tender.id] || [];
+      return [tender.name, tender.title, tender.tenderRef, tender.referenceNumber, tender.department, tender.id, ...vendorNames]
         .filter(Boolean)
         .some(value => value.toString().toLowerCase().includes(normalizedQuery));
     })

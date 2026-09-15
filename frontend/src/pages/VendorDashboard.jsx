@@ -229,10 +229,10 @@ export default function VendorDashboard() {
       showNotification(err.message || t("vendor.downloadFailed"), "error");
     }
   };  const filteredTenders = tenders.filter(
-    (t) =>
-      t.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.referenceNumber?.toLowerCase().includes(searchQuery.toLowerCase())
+    (tender) =>
+      tender.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tender.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tender.referenceNumber?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalDocsCount = Object.values(documentsMap).reduce((acc, curr) => acc + curr.length, 0);
@@ -404,7 +404,7 @@ export default function VendorDashboard() {
               ) : (
                 <div className="bids-workspace-list">
                   {bids.map((bid) => {
-                    const tenderInfo = tenders.find((t) => t.id === bid.tenderId);
+                    const tenderInfo = tenders.find((tender) => tender.id === bid.tenderId);
                     const bidDocs = documentsMap[bid.id] || [];
 
                     return (
