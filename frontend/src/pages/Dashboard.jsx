@@ -4,7 +4,8 @@ import StatusBadge from "../components/StatusBadge";
 import { Link } from "react-router-dom";
 import { apiRequest } from "../services/apiClient";
 import { subscribeToTable, isRealtimeEnabled } from "../lib/supabase";
-import { ArrowRight, ArrowUpRight, FilePlus2, FolderOpen, UsersRound, Search, ShieldCheck, Sparkles, Activity, FileText, Clock } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
+import { ArrowRight, ArrowUpRight, FilePlus2, FolderOpen, UsersRound, ShieldCheck, Sparkles, Activity, FileText } from "lucide-react";
 
 const services = [
   { icon: FilePlus2, label: "New evaluation", text: "Start with a GeM tender", to: "/tenders/new", tone: "orange" },
@@ -13,6 +14,7 @@ const services = [
 ];
 
 export default function Dashboard() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState({ tenders: 0, evaluations: 0, in_progress: 0, needs_review: 0, awards: 0 });
   const [tenders, setTenders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,37 +55,32 @@ export default function Dashboard() {
       <section className="welcome-hero">
         <div className="hero-copy">
           <div className="eyebrow">
-            <span className="eyebrow-line" /> PROCUREMENT INTELLIGENCE PLATFORM
+            <span className="eyebrow-line" /> {t("heroEyebrow")}
           </div>
           <h1>
-            From tenders<br />
-            <em>to trust.</em>
+            {t("heroTitleLine1")}<br />
+            <em>{t("heroTitleLine2")}</em>
           </h1>
-          <p>AI-assisted bid compliance verification for faster, fairer and more transparent public procurement.</p>
+          <p>{t("heroSubtitle")}</p>
           <div className="hero-actions">
             <Link to="/tenders/new" className="primary-action">
-              <FilePlus2 size={18} /> New evaluation <ArrowRight size={16} />
+              <FilePlus2 size={18} /> {t("newEvaluation")} <ArrowRight size={16} />
             </Link>
             <Link to="/tenders" className="secondary-action">
-              Explore evaluations <ArrowUpRight size={16} />
+              {t("exploreEvaluations")} <ArrowUpRight size={16} />
             </Link>
           </div>
-          <label className="hero-search">
-            <Search size={19} />
-            <input placeholder="Search by tender name, ID or vendor" />
-            <span>Search</span>
-          </label>
         </div>
       </section>
 
       <section className="portal-home">
         <div className="portal-heading">
           <div>
-            <div className="section-kicker">PROCUREMENT WORKSPACE</div>
-            <h2>Your procurement workspace</h2>
+            <div className="section-kicker">{t("procurementWorkspace")}</div>
+            <h2>{t("yourWorkspace")}</h2>
           </div>
           <div className="portal-date">
-            <span className="live-dot" /> {isRealtimeEnabled() ? "Live sync connected" : "System operational"}
+            <span className="live-dot" /> {isRealtimeEnabled() ? t("liveSyncConnected") : t("systemOperational")}
           </div>
         </div>
 

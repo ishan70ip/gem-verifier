@@ -29,3 +29,15 @@ export async function downloadReportCsv(evaluationId) {
   link.remove();
   window.URL.revokeObjectURL(url);
 }
+
+// Vendor/bid documents (tender notices, bid submissions) are only served
+// with an auth header, so fetch as a blob. Used by DocumentPreviewModal to
+// render PDFs/images inline instead of forcing a browser download.
+export async function fetchDocumentBlob(documentId) {
+  const token = window.localStorage.getItem("gem_access_token");
+  const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) throw new Error("Document could not be loaded");
+  return response.blob();
+}

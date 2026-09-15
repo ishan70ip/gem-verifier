@@ -5,6 +5,8 @@ import EvaluationHeader from "@/components/evaluation/EvaluationHeader";
 import ComplianceSummary from "@/components/evaluation/ComplianceSummary";
 import ComplianceMatrix from "@/components/evaluation/ComplianceMatrix";
 import EvidenceDrawer from "@/components/evaluation/EvidenceDrawer";
+import VendorDocumentsDrawer from "@/components/evaluation/VendorDocumentsDrawer";
+import DocumentPreviewModal from "@/components/evaluation/DocumentPreviewModal";
 import { completeEvaluation, getEvaluationById, resolveComplianceResult, runAiAnalysis, downloadReportCsv } from "@/services/evaluationService";
 import { Sparkles, Download } from "lucide-react";
 
@@ -20,6 +22,8 @@ export default function EvaluationPage() {
   const [resolvedResults, setResolvedResults] = useState({});
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [documentsVendor, setDocumentsVendor] = useState(null);
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   const load = () => {
     setLoaded(false);
@@ -134,7 +138,12 @@ export default function EvaluationPage() {
           </div>
         )}
 
-        <ComplianceSummary vendors={data.vendors || []} requirements={data.requirements || []} results={results} lastProcessed={data.evaluation.lastProcessed} onOpenVendor={vendor => setSelectedVendor(vendor.id)} />
+        <ComplianceSummary vendors={data.vendors || []} requirements={data.requirements || []} results={results} documents={data.documents || []} lastProcessed={data.evaluation.lastProcessed} onOpenVendor={vendor => setSelectedVendor(vendor.id)} onViewVendorDocuments={(vendor, docs) => {
+          // Skip the intermediate documents list when there's only one file
+          // — go straight to the preview.
+          if (docs.length === 1) setPreviewDoc(docs[0]);
+          else setDocumentsVendor(vendor);
+        }} />
 
         <section className="review-queue-new">
           <div>
@@ -149,7 +158,26 @@ export default function EvaluationPage() {
 
         <ComplianceMatrix requirements={data.requirements || []} vendors={data.vendors || []} results={results} filter={filter} setFilter={setFilter} query={query} setQuery={setQuery} selectedVendor={selectedVendor} setSelectedVendor={setSelectedVendor} mandatoryOnly={mandatoryOnly} setMandatoryOnly={setMandatoryOnly} onSelect={setSelectedResult} />
       </main>
-      {selectedResult && <EvidenceDrawer result={selectedResult} requirement={selectedRequirement} vendor={selectedVendorData} onClose={() => setSelectedResult(null)} onResolve={handleResolve} />}
+      {selectedResult && (
+        <EvidenceDrawer
+          result={selectedResult}
+          requirement={selectedRequirement}
+          vendor={selectedVendorData}
+          documents={data.documents || []}
+          onClose={() => setSelectedResult(null)}
+          onResolve={handleResolve}
+          onViewSourceDocument={setPreviewDoc}
+        />
+      )}
+      {documentsVendor && (
+        <VendorDocumentsDrawer
+          vendor={documentsVendor}
+          documents={(data.documents || []).filter(doc => doc.bidId === documentsVendor.bid?.id)}
+          onClose={() => setDocumentsVendor(null)}
+          onView={setPreviewDoc}
+        />
+      )}
+      <DocumentPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
     </AppShell>
   );
 }

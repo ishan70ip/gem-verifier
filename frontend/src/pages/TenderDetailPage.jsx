@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import AppShell from "@/components/AppShell";
+import VendorDocumentsDrawer from "@/components/evaluation/VendorDocumentsDrawer";
+import DocumentPreviewModal from "@/components/evaluation/DocumentPreviewModal";
 import { getTender } from "@/services/procurementService";
 import { createEvaluation, runAiAnalysis } from "@/services/evaluationService";
-import { apiRequest } from "@/services/apiClient";
-import { ArrowRight, Upload, Sparkles, FileText } from "lucide-react";
+import { ArrowRight, FileText, FolderOpen, Sparkles, Upload } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
@@ -16,42 +17,14 @@ export default function TenderDetailPage() {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [documentsBid, setDocumentsBid] = useState(null);
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   const load = () => {
     setLoaded(false);
     getTender(id).then(setTender).catch(() => setTender(null)).finally(() => setLoaded(true));
   };
   useEffect(load, [id]);
-
-  const handleUploadNotice = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setBusy("upload");
-    setError("");
-    setNotice("");
-    try {
-      const token = window.localStorage.getItem("gem_access_token");
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("document_type", "tender_notice");
-      const res = await fetch(`${API_BASE_URL}/tenders/${id}/documents`, {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.detail || "Notice upload failed");
-      }
-      setNotice(`Notice "${file.name}" uploaded and attached to this tender.`);
-      load();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy("");
-      event.target.value = "";
-    }
-  };
 
   const handleRunVerification = async () => {
     setBusy("analyze");
@@ -147,17 +120,35 @@ export default function TenderDetailPage() {
               ) : (
                 <table className="data-table">
                   <thead>
-                    <tr><th>Vendor</th><th>Bid Ref</th><th>Submitted</th><th></th></tr>
+                    <tr><th>Vendor</th><th>Bid Ref</th><th>Submitted</th><th></th><th>Documents</th></tr>
                   </thead>
                   <tbody>
-                    {bids.map((bid) => (
-                      <tr key={bid.id}>
-                        <td style={{ fontWeight: 600, fontSize: 13 }}>{bid.companyName || bid.vendorName || "Vendor"}</td>
-                        <td><span className="mono" style={{ fontSize: 12 }}>{bid.bidReference}</span></td>
-                        <td style={{ fontSize: 12.5, color: "var(--text-secondary)" }}>{bid.submittedAt ? new Date(bid.submittedAt).toLocaleString() : "—"}</td>
-                        <td><span style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{bid.submissionStatus}</span></td>
-                      </tr>
-                    ))}
+                    {bids.map((bid) => {
+                      const bidDocs = documents.filter((d) => d.bidId === bid.id);
+                      return (
+                        <tr key={bid.id}>
+                          <td style={{ fontWeight: 600, fontSize: 13 }}>{bid.companyName || bid.vendorName || "Vendor"}</td>
+                          <td><span className="mono" style={{ fontSize: 12 }}>{bid.bidReference}</span></td>
+                          <td style={{ fontSize: 12.5, color: "var(--text-secondary)" }}>{bid.submittedAt ? new Date(bid.submittedAt).toLocaleString() : "—"}</td>
+                          <td><span style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{bid.submissionStatus}</span></td>
+                          <td>
+                            <button
+                              className="btn btn-ghost"
+                              style={{ padding: "6px 10px", fontSize: 11.5 }}
+                              disabled={bidDocs.length === 0}
+                              onClick={() => {
+                                // Skip the intermediate documents list when there's
+                                // only one file — go straight to the preview.
+                                if (bidDocs.length === 1) setPreviewDoc(bidDocs[0]);
+                                else setDocumentsBid({ name: bid.companyName || bid.vendorName || "Vendor", bid: { id: bid.id, bidReference: bid.bidReference } });
+                              }}
+                            >
+                              <FolderOpen size={13} /> View ({bidDocs.length})
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
@@ -179,22 +170,6 @@ export default function TenderDetailPage() {
             </div>
 
             <div className="card">
-              <div className="card-header"><div className="card-header-title">Tender notice documents</div></div>
-              <div className="card-body">
-                {documents.filter((d) => !d.bidId).map((doc) => (
-                  <div key={doc.id} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12.5, marginBottom: 8 }}>
-                    <FileText size={14} /> <span className="mono">{doc.originalFilename}</span>
-                  </div>
-                ))}
-                <label className="btn btn-ghost" style={{ width: "100%", justifyContent: "center", cursor: "pointer", marginTop: 6 }}>
-                  <Upload size={14} /> {busy === "upload" ? "Uploading…" : "Upload notice PDF"}
-                  <input type="file" accept=".pdf,.txt" style={{ display: "none" }} onChange={handleUploadNotice} disabled={busy === "upload"} />
-                </label>
-                <div className="field-hint" style={{ marginTop: 8 }}>Thresholds (EMD, turnover, experience) are parsed from these files.</div>
-              </div>
-            </div>
-
-            <div className="card">
               <div className="card-header"><div className="card-header-title">Vendor submissions</div></div>
               <div className="card-body">
                 <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
@@ -208,6 +183,15 @@ export default function TenderDetailPage() {
           </div>
         </div>
       </div>
+      {documentsBid && (
+        <VendorDocumentsDrawer
+          vendor={documentsBid}
+          documents={documents.filter((d) => d.bidId === documentsBid.bid?.id)}
+          onClose={() => setDocumentsBid(null)}
+          onView={setPreviewDoc}
+        />
+      )}
+      <DocumentPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
     </AppShell>
   );
 }

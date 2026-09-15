@@ -1,21 +1,25 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Search, HelpCircle, Bell, ChevronDown, RefreshCw, LogOut, UserCheck, Building2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 const officerLinks = [
-  { label: "Home", to: "/" },
-  { label: "Evaluations", to: "/tenders" },
-  { label: "Vendors", to: "/vendors" },
+  { key: "navHome", to: "/" },
+  { key: "navEvaluations", to: "/tenders" },
+  { key: "navVendors", to: "/vendors" },
 ];
 
 const vendorLinks = [
-  { label: "Vendor Workspace", to: "/vendor/dashboard" },
+  { key: "vendorWorkspace", to: "/vendor/dashboard" },
 ];
 
 export default function AppShell({ children, noPadding = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { language, toggleLanguage, t } = useLanguage();
+  const [headerQuery, setHeaderQuery] = useState("");
 
   const handleLogout = () => {
     logout();
@@ -23,7 +27,14 @@ export default function AppShell({ children, noPadding = false }) {
   };
 
   const isVendor = user?.role === "vendor";
+
+  const handleHeaderSearch = () => {
+    const q = headerQuery.trim();
+    if (!q || isVendor) return;
+    navigate(`/tenders?q=${encodeURIComponent(q)}`);
+  };
   const links = isVendor ? vendorLinks : officerLinks;
+  const linkLabel = key => (key === "vendorWorkspace" ? "Vendor Workspace" : t(key));
 
   const displayName = user?.name || (isVendor ? "Acme Procurement Systems" : "Arjun Sharma");
   const displayRole = isVendor ? "Registered Vendor" : "Procurement Officer";
@@ -32,10 +43,10 @@ export default function AppShell({ children, noPadding = false }) {
   return (
     <div className="app-shell">
       <div className="gov-strip">
-        <div>Government e-Marketplace · Ministry of Commerce &amp; Industry</div>
+        <div>{t("govStrip")}</div>
         <div className="gov-strip-right">
-          <span>भारत सरकार</span>
-          <span>Skip to main content</span>
+          <span>{t("bharatSarkar")}</span>
+          <span>{t("skipToContent")}</span>
           <span>अ | A</span>
         </div>
       </div>
@@ -47,21 +58,17 @@ export default function AppShell({ children, noPadding = false }) {
           </div>
           <div className="brand-copy">
             <strong>GeM</strong>
-            <span>Bid Compliance Verification</span>
+            <span>{t("brandTagline")}</span>
           </div>
           <div className="brand-divider" />
           <div className="brand-dept">
-            <b>Government e-Marketplace</b>
-            <span>Smarter procurement. Stronger compliance.</span>
+            <b>{t("brandDept")}</b>
+            <span>{t("brandDeptTagline")}</span>
           </div>
         </Link>
 
         <div className="header-tools">
-          <label className="header-search">
-            <Search size={16} />
-            <input placeholder="Search evaluations" />
-            <kbd>⌘ K</kbd>
-          </label>
+
 
           <button className="icon-button" aria-label="Help">
             <HelpCircle size={19} />
@@ -72,8 +79,8 @@ export default function AppShell({ children, noPadding = false }) {
             <i />
           </button>
 
-          <button className="language">
-            <span>अ</span> English <ChevronDown size={14} />
+          <button className="language" onClick={toggleLanguage} title="Switch language">
+            <span>अ</span> {language === "hi" ? "हिंदी" : "English"} <ChevronDown size={14} />
           </button>
 
           {user ? (
@@ -87,12 +94,12 @@ export default function AppShell({ children, noPadding = false }) {
               </div>
               <button onClick={handleLogout} className="header-logout-btn" title="Sign Out">
                 <LogOut size={15} />
-                <span>Logout</span>
+                <span>{t("logout")}</span>
               </button>
             </div>
           ) : (
             <Link to="/login" className="login-link-btn">
-              Sign In
+              {t("signIn")}
             </Link>
           )}
         </div>
@@ -103,28 +110,28 @@ export default function AppShell({ children, noPadding = false }) {
           <div className="nav-links">
             {links.map((link) => (
               <Link
-                key={link.label}
+                key={link.key}
                 className={
-                  (link.label === "Evaluations" && location.pathname.startsWith("/tenders")) ||
-                  (link.label !== "Vendors" && link.label !== "Evaluations" && location.pathname === link.to)
+                  (link.key === "navEvaluations" && location.pathname.startsWith("/tenders")) ||
+                    (link.key !== "navVendors" && link.key !== "navEvaluations" && location.pathname === link.to)
                     ? "active"
                     : ""
                 }
                 to={link.to}
               >
-                {link.label}
-                {link.label === "Evaluations" && <ChevronDown size={14} />}
+                {linkLabel(link.key)}
+                {link.key === "navEvaluations" && <ChevronDown size={14} />}
               </Link>
             ))}
           </div>
 
           <div className="nav-right-controls">
             <div className="nav-status">
-              <span className="status-dot" /> Engine operational <RefreshCw size={13} />
+              <span className="status-dot" /> {t("engineOperational")} <RefreshCw size={13} />
             </div>
             {user && (
               <button onClick={handleLogout} className="navbar-logout-btn">
-                <LogOut size={13} /> Logout ({user.email})
+                <LogOut size={13} /> {t("logout")} ({user.email})
               </button>
             )}
           </div>
@@ -135,13 +142,13 @@ export default function AppShell({ children, noPadding = false }) {
 
       <footer className="site-footer">
         <div>
-          <b>GeM Bid Compliance Verification</b>
-          <span>Evidence-based evaluation for transparent public procurement</span>
+          <b>{t("footerTitle")}</b>
+          <span>{t("footerTagline")}</span>
         </div>
         <div className="footer-links">
-          <span>Privacy</span>
-          <span>Help &amp; Support</span>
-          <span>Version 1.0</span>
+          <span>{t("privacy")}</span>
+          <span>{t("helpSupport")}</span>
+          <span>{t("version")}</span>
         </div>
       </footer>
     </div>
