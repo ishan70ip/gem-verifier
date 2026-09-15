@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { ShieldCheck, Building2, UserCheck, ArrowRight, AlertCircle, Lock, Mail } from "lucide-react";
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const [role, setRole] = useState("officer"); // officer | vendor
   const [email, setEmail] = useState("officer@procurement.gov.in");
   const [password, setPassword] = useState("Password123!");
@@ -39,7 +41,7 @@ export default function LoginPage() {
         navigate("/");
       }
     } catch (err) {
-      setError(err.message || "Invalid credentials. Please check your email and password.");
+      setError(err.message || t("login.invalidCredentials"));
     } finally {
       setIsSubmitting(false);
     }
@@ -48,10 +50,10 @@ export default function LoginPage() {
   return (
     <div className="login-container">
       <div className="gov-strip">
-        <div>Government e-Marketplace · Ministry of Commerce &amp; Industry</div>
+        <div>{t("login.govStrip")}</div>
         <div className="gov-strip-right">
           <span>भारत सरकार</span>
-          <span>Helpdesk: 1800-419-3436</span>
+          <span>{t("login.helpdesk")}</span>
         </div>
       </div>
 
@@ -59,10 +61,10 @@ export default function LoginPage() {
         <div className="login-card">
           <div className="login-header">
             <div className="login-brand">
-              <img src="/gem-mark.png" alt="GeM Logo" className="login-logo" />
+              <img src="/gem-mark.png" alt={t("login.logoAlt")} className="login-logo" />
               <div>
-                <h2>Government e-Marketplace</h2>
-                <p>Bid Compliance Verification Portal</p>
+                <h2>{t("login.brandTitle")}</h2>
+                <p>{t("login.brandSubtitle")}</p>
               </div>
             </div>
           </div>
@@ -74,7 +76,7 @@ export default function LoginPage() {
               onClick={() => handleRoleSwitch("officer")}
             >
               <ShieldCheck size={18} />
-              <span>Officer Portal</span>
+              <span>{t("login.officerPortal")}</span>
             </button>
             <button
               type="button"
@@ -82,14 +84,14 @@ export default function LoginPage() {
               onClick={() => handleRoleSwitch("vendor")}
             >
               <Building2 size={18} />
-              <span>Vendor Portal</span>
+              <span>{t("login.vendorPortal")}</span>
             </button>
           </div>
 
           <div className="login-body">
             <div className="role-badge-container">
               <span className={`role-badge ${role}`}>
-                {role === "officer" ? "Procurement / Evaluation Officer" : "Registered Bidder / Vendor"}
+                {role === "officer" ? t("login.officerRole") : t("login.vendorRole")}
               </span>
             </div>
 
@@ -102,7 +104,7 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="login-form">
               <div className="form-group">
-                <label htmlFor="email">Official Email Address</label>
+                <label htmlFor="email">{t("login.emailLabel")}</label>
                 <div className="input-with-icon">
                   <Mail size={16} className="input-icon" />
                   <input
@@ -117,7 +119,7 @@ export default function LoginPage() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="password">Password</label>
+                <label htmlFor="password">{t("login.passwordLabel")}</label>
                 <div className="input-with-icon">
                   <Lock size={16} className="input-icon" />
                   <input
@@ -133,10 +135,10 @@ export default function LoginPage() {
 
               <button type="submit" disabled={isSubmitting} className="submit-btn">
                 {isSubmitting ? (
-                  "Signing in..."
+                  t("login.signingIn")
                 ) : (
                   <>
-                    <span>Sign In to {role === "officer" ? "Officer Portal" : "Vendor Portal"}</span>
+                    <span>{t("login.signInTo")} {role === "officer" ? t("login.officerPortal") : t("login.vendorPortal")}</span>
                     <ArrowRight size={18} />
                   </>
                 )}
@@ -144,7 +146,7 @@ export default function LoginPage() {
             </form>
 
             <div className="quick-demo-section">
-              <p className="demo-title">Quick Demo Login Options:</p>
+              <p className="demo-title">{t("login.quickDemoTitle")}</p>
               <div className="demo-buttons">
                 <button
                   type="button"
@@ -153,7 +155,7 @@ export default function LoginPage() {
                     handleRoleSwitch("officer");
                   }}
                 >
-                  <UserCheck size={14} /> Fill Officer Credentials
+                  <UserCheck size={14} /> {t("login.fillOfficerCredentials")}
                 </button>
                 <button
                   type="button"
@@ -162,15 +164,15 @@ export default function LoginPage() {
                     handleRoleSwitch("vendor");
                   }}
                 >
-                  <Building2 size={14} /> Fill Vendor Credentials
+                  <Building2 size={14} /> {t("login.fillVendorCredentials")}
                 </button>
               </div>
             </div>
           </div>
 
           <div className="login-footer">
-            <span>Secure SSL Encrypted Connection</span>
-            <span>National Informatics Centre (NIC) Compliance</span>
+            <span>{t("login.secureConnection")}</span>
+            <span>{t("login.nicCompliance")}</span>
           </div>
         </div>
       </div>

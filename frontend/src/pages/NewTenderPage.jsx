@@ -3,10 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { createTender } from "@/services/procurementService";
 import { ArrowLeft, Info, FileText, Upload } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 export default function NewTenderPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "", tenderRef: "", department: "", deadline: "",
@@ -52,14 +54,14 @@ export default function NewTenderPage() {
         
         if (!res.ok) {
           const errJson = await res.json().catch(() => ({}));
-          throw new Error(errJson.detail || "Tender created, but notice upload failed");
+          throw new Error(errJson.detail || t("newTender.noticeUploadFailed"));
         }
       }
       
       navigate(`/tenders/${tender.id || tender._id}`); 
     }
     catch (err) { 
-      setError(err.message || "The procurement service is unavailable. Connect the backend before creating a tender."); 
+      setError(err.message || t("newTender.serviceUnavailable")); 
       setBusy("");
     }
   };
@@ -68,11 +70,11 @@ export default function NewTenderPage() {
     <AppShell>
       <div className="page-bar">
         <div>
-          <div className="page-title">Create New Tender</div>
+          <div className="page-title">{t("newTender.pageTitle")}</div>
           <div className="breadcrumb" style={{ marginTop: 2 }}>
-            <Link to="/">Home</Link><span className="breadcrumb-sep">/</span>
-            <Link to="/tenders">Tenders</Link><span className="breadcrumb-sep">/</span>
-            <span>New Tender</span>
+            <Link to="/">{t("newTender.home")}</Link><span className="breadcrumb-sep">/</span>
+            <Link to="/tenders">{t("newTender.tenders")}</Link><span className="breadcrumb-sep">/</span>
+            <span>{t("newTender.newTenderCrumb")}</span>
           </div>
         </div>
       </div>
@@ -81,7 +83,7 @@ export default function NewTenderPage() {
         <div className="alert alert-info" style={{ marginBottom: 20 }}>
           <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
           <div>
-            Define the AI verification rules for this tender. The system will automatically extract and validate these three parameters from every submitted bid.
+            {t("newTender.infoBanner")}
           </div>
         </div>
 
@@ -89,78 +91,78 @@ export default function NewTenderPage() {
         <form onSubmit={handleSubmit}>
           <div className="card" style={{ marginBottom: 16 }}>
             <div className="card-header">
-              <div className="card-header-title">Tender Identity</div>
+              <div className="card-header-title">{t("newTender.identityTitle")}</div>
             </div>
             <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <label className="field-label">Tender Name <span style={{ color: "var(--status-red)" }}>*</span></label>
+                <label className="field-label">{t("newTender.nameLabel")} <span style={{ color: "var(--status-red)" }}>*</span></label>
                 <input className="input-field" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Supply of IT Infrastructure for District Offices" required disabled={!!busy} />
+                  placeholder={t("newTender.namePlaceholder")} required disabled={!!busy} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <div>
-                  <label className="field-label">Tender Reference No. <span style={{ color: "var(--status-red)" }}>*</span></label>
+                  <label className="field-label">{t("newTender.refLabel")} <span style={{ color: "var(--status-red)" }}>*</span></label>
                   <input className="input-field" value={form.tenderRef} onChange={e => setForm(f => ({ ...f, tenderRef: e.target.value }))}
-                    placeholder="GEM/2024/B/..." required disabled={!!busy} />
+                    placeholder={t("newTender.refPlaceholder")} required disabled={!!busy} />
                 </div>
                 <div>
-                  <label className="field-label">Deadline <span style={{ color: "var(--status-red)" }}>*</span></label>
+                  <label className="field-label">{t("newTender.deadlineLabel")} <span style={{ color: "var(--status-red)" }}>*</span></label>
                   <input className="input-field" type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))} required disabled={!!busy} />
                 </div>
               </div>
               <div>
-                <label className="field-label">Issuing Department <span style={{ color: "var(--status-red)" }}>*</span></label>
+                <label className="field-label">{t("newTender.departmentLabel")} <span style={{ color: "var(--status-red)" }}>*</span></label>
                 <input className="input-field" value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
-                  placeholder="e.g. Ministry of Electronics & Information Technology" required disabled={!!busy} />
+                  placeholder={t("newTender.departmentPlaceholder")} required disabled={!!busy} />
               </div>
             </div>
           </div>
           
           <div className="card" style={{ marginBottom: 16 }}>
-            <div className="card-header"><div className="card-header-title">Tender notice documents</div></div>
+            <div className="card-header"><div className="card-header-title">{t("newTender.noticeTitle")}</div></div>
             <div className="card-body">
               {file ? (
                 <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12.5, marginBottom: 8, width: "100%", padding: 0 }}>
                   <FileText size={14} /> <span className="mono">{file.name}</span>
-                  <button type="button" onClick={() => setFile(null)} style={{ marginLeft: "auto", border: "none", background: "none", cursor: "pointer", color: "var(--status-red)" }}>Remove</button>
+                  <button type="button" onClick={() => setFile(null)} style={{ marginLeft: "auto", border: "none", background: "none", cursor: "pointer", color: "var(--status-red)" }}>{t("newTender.removeFile")}</button>
                 </div>
               ) : (
-                <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginBottom: 8 }}>No notice documents selected.</p>
+                <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginBottom: 8 }}>{t("newTender.noNotice")}</p>
               )}
               
               {!file && (
                 <label className="btn btn-ghost" style={{ width: "100%", justifyContent: "center", cursor: "pointer", marginTop: 6 }}>
-                  <Upload size={14} /> Select notice PDF
+                  <Upload size={14} /> {t("newTender.selectNotice")}
                   <input type="file" accept=".pdf,.txt" style={{ display: "none" }} onChange={(e) => setFile(e.target.files?.[0] || null)} disabled={!!busy} />
                 </label>
               )}
-              <div className="field-hint" style={{ marginTop: 8 }}>Thresholds (EMD, turnover, experience) are parsed from these files.</div>
+              <div className="field-hint" style={{ marginTop: 8 }}>{t("newTender.noticeHint")}</div>
             </div>
           </div>
 
           <div className="card" style={{ marginBottom: 20 }}>
             <div className="card-header">
-              <div className="card-header-title">AI Verification Parameters</div>
+              <div className="card-header-title">{t("newTender.paramsTitle")}</div>
             </div>
             <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                These three parameters will be automatically extracted from each submitted bid PDF and verified against the values below.
+                {t("newTender.paramsDesc")}
               </p>
               <div>
-                <label className="field-label">EMD Required (₹) <span style={{ color: "var(--status-red)" }}>*</span></label>
+                <label className="field-label">{t("newTender.emdLabel")} <span style={{ color: "var(--status-red)" }}>*</span></label>
                 <input className="input-field" type="number" value={form.emdRequired} onChange={e => setForm(f => ({ ...f, emdRequired: e.target.value }))} placeholder="500000" required disabled={!!busy} />
-                <div className="field-hint">Minimum Earnest Money Deposit in Indian Rupees</div>
+                <div className="field-hint">{t("newTender.emdHint")}</div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <div>
-                  <label className="field-label">Min. Experience (Years) <span style={{ color: "var(--status-red)" }}>*</span></label>
+                  <label className="field-label">{t("newTender.experienceLabel")} <span style={{ color: "var(--status-red)" }}>*</span></label>
                   <input className="input-field" type="number" value={form.minExperienceYears} onChange={e => setForm(f => ({ ...f, minExperienceYears: e.target.value }))} placeholder="5" required disabled={!!busy} />
-                  <div className="field-hint">Years of relevant industry experience</div>
+                  <div className="field-hint">{t("newTender.experienceHint")}</div>
                 </div>
                 <div>
-                  <label className="field-label">Min. Annual Turnover (₹) <span style={{ color: "var(--status-red)" }}>*</span></label>
+                  <label className="field-label">{t("newTender.turnoverLabel")} <span style={{ color: "var(--status-red)" }}>*</span></label>
                   <input className="input-field" type="number" value={form.minAnnualTurnover} onChange={e => setForm(f => ({ ...f, minAnnualTurnover: e.target.value }))} placeholder="10000000" required disabled={!!busy} />
-                  <div className="field-hint">Minimum turnover for last financial year</div>
+                  <div className="field-hint">{t("newTender.turnoverHint")}</div>
                 </div>
               </div>
             </div>
@@ -168,10 +170,10 @@ export default function NewTenderPage() {
 
           <div style={{ display: "flex", gap: 12 }}>
             <button type="submit" className="btn btn-primary" disabled={!!busy} style={{ flex: 1, justifyContent: "center", padding: "11px" }}>
-              {busy === "creating" ? "Creating..." : busy === "uploading" ? "Uploading Document..." : "Create Tender"}
+              {busy === "creating" ? t("newTender.creating") : busy === "uploading" ? t("newTender.uploading") : t("newTender.createTender")}
             </button>
             <Link to="/tenders" className="btn btn-ghost" style={{ padding: "11px 20px", pointerEvents: busy ? "none" : "auto" }}>
-              <ArrowLeft size={14} /> Cancel
+              <ArrowLeft size={14} /> {t("newTender.cancel")}
             </Link>
           </div>
         </form>

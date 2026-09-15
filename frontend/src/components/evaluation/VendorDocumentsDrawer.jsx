@@ -1,4 +1,5 @@
 import { Eye, FileText, X } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
 function formatSize(bytes) {
   if (!bytes && bytes !== 0) return null;
@@ -7,47 +8,48 @@ function formatSize(bytes) {
 }
 
 export default function VendorDocumentsDrawer({ vendor, documents, onClose, onView }) {
+  const { t } = useLanguage();
   if (!vendor) return null;
   return (
     <div className="drawer-overlay-new" onClick={onClose}>
       <aside className="evidence-drawer-new" onClick={event => event.stopPropagation()}>
         <header>
           <div>
-            <div className="section-kicker">SUBMITTED DOCUMENTS</div>
+            <div className="section-kicker">{t("vendorDocs.kicker")}</div>
             <h2>{vendor.name}</h2>
           </div>
-          <button onClick={onClose} aria-label="Close vendor documents">
+          <button onClick={onClose} aria-label={t("vendorDocs.closeLabel")}>
             <X size={18} />
           </button>
         </header>
 
         <div className="drawer-flow-step">
-          <label>Bid reference</label>
-          <p>{vendor.bid?.bidReference || "No bid submitted"}</p>
+          <label>{t("vendorDocs.bidReference")}</label>
+          <p>{vendor.bid?.bidReference || t("vendorDocs.noBid")}</p>
         </div>
 
         <div className="drawer-flow-step">
-          <label>Documents ({documents.length})</label>
+          <label>{t("vendorDocs.documents")} ({documents.length})</label>
           {documents.length ? (
             <div className="vendor-doc-list">
               {documents.map(doc => (
                 <div className="vendor-doc-row" key={doc.id}>
                   <div className="vendor-doc-info">
-                    <b><FileText size={13} /> {doc.originalFilename || "Document"}</b>
+                    <b><FileText size={13} /> {doc.originalFilename || t("vendorDocs.fallbackTitle")}</b>
                     <small>
-                      {(doc.documentType || "document").replace(/_/g, " ")}
+                      {(doc.documentType || t("vendorDocs.fallbackType")).replace(/_/g, " ")}
                       {formatSize(doc.fileSize) ? ` · ${formatSize(doc.fileSize)}` : ""}
                     </small>
                   </div>
                   <button className="btn btn-ghost" onClick={() => onView(doc)}>
-                    <Eye size={13} /> View
+                    <Eye size={13} /> {t("vendorDocs.view")}
                   </button>
                 </div>
               ))}
             </div>
           ) : (
             <div className="drawer-missing">
-              <FileText size={15} /> This vendor has not submitted any documents yet.
+              <FileText size={15} /> {t("vendorDocs.emptyMessage")}
             </div>
           )}
         </div>

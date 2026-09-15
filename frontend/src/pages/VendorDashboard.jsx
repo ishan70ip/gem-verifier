@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import AppShell from "../components/AppShell";
 import StatusBadge from "../components/StatusBadge";
 import { apiRequest } from "../services/apiClient";
+import { useLanguage } from "../context/LanguageContext";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 import {
@@ -27,6 +28,7 @@ import {
 } from "lucide-react";
 
 export default function VendorDashboard() {
+  const { t } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [tenders, setTenders] = useState([]);
   const [bids, setBids] = useState([]);
@@ -107,7 +109,7 @@ export default function VendorDashboard() {
       const detailedTender = await apiRequest(`/vendor/tenders/${tenderId}`);
       setSelectedTender(detailedTender);
     } catch (err) {
-      showNotification(`Failed loading tender details: ${err.message}`, "error");
+      showNotification(`${t("vendor.failedLoadingTenderDetails")}: ${err.message}`, "error");
     }
   };
 
@@ -139,17 +141,17 @@ export default function VendorDashboard() {
       setBids((prev) => [newBid, ...prev]);
       setIsBiddingModalOpen(false);
       setSelectedTender(null);
-      showNotification(`Bid ${newBid.bidReference} submitted successfully! You can now upload technical compliance documents.`, "success");
+      showNotification(`${t("vendor.bidSubmittedPrefix")} ${newBid.bidReference} ${t("vendor.bidSubmittedSuffix")}`, "success");
       setActiveTab("bids");
     } catch (err) {
-      showNotification(err.message || "Failed to submit bid", "error");
+      showNotification(err.message || t("vendor.failedSubmitBid"), "error");
     }
   };
 
   const handleUploadDocument = async (e, bidId) => {
     e.preventDefault();
     if (!fileToUpload) {
-      showNotification("Please select a file to upload.", "error");
+      showNotification(t("vendor.selectFileError"), "error");
       return;
     }
 
@@ -168,7 +170,7 @@ export default function VendorDashboard() {
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.detail || "File upload failed");
+        throw new Error(errJson.detail || t("vendor.fileUploadFailed"));
       }
 
       const uploadedDoc = await res.json();
@@ -179,7 +181,7 @@ export default function VendorDashboard() {
 
       setFileToUpload(null);
       setActiveUploadBidId(null);
-      showNotification(`Document "${uploadedDoc.originalFilename}" uploaded and stored successfully!`, "success");
+      showNotification(`${t("vendor.docUploadedPrefix")} "${uploadedDoc.originalFilename}" ${t("vendor.docUploadedSuffix")}`, "success");
     } catch (err) {
       showNotification(err.message, "error");
     } finally {
@@ -200,9 +202,9 @@ export default function VendorDashboard() {
       });
       setProfile(updated);
       setIsEditProfileOpen(false);
-      showNotification("Vendor organization profile updated successfully!", "success");
+      showNotification(t("vendor.profileUpdated"), "success");
     } catch (err) {
-      showNotification(err.message || "Failed updating profile", "error");
+      showNotification(err.message || t("vendor.failedUpdatingProfile"), "error");
     }
   };
 
@@ -213,7 +215,7 @@ export default function VendorDashboard() {
       const res = await fetch(`${API_BASE_URL}/documents/${doc.id}/download`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!res.ok) throw new Error("Download failed");
+      if (!res.ok) throw new Error(t("vendor.downloadFailed"));
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -224,7 +226,7 @@ export default function VendorDashboard() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      showNotification(err.message || "Download failed", "error");
+      showNotification(err.message || t("vendor.downloadFailed"), "error");
     }
   };  const filteredTenders = tenders.filter(
     (t) =>
@@ -256,16 +258,16 @@ export default function VendorDashboard() {
           </div>
           <div>
             <div className="vendor-code-tag">{profile?.vendorCode || "VEN-VERIFIED"}</div>
-            <h1>{profile?.legalName || "Vendor Organization Portal"}</h1>
+            <h1>{profile?.legalName || t("vendor.orgPortalFallback")}</h1>
             <p className="vendor-sub">
-              {profile?.contact?.email || "vendor@acme.com"} • GSTIN: {profile?.organization?.gstin || "07AAAAA0000A1Z5"} • Category:{" "}
+              {profile?.contact?.email || "vendor@acme.com"} • {t("vendor.gstinLabel")} {profile?.organization?.gstin || "07AAAAA0000A1Z5"} • {t("vendor.categoryLabel")}{" "}
               {profile?.organization?.category || "MSME"}
             </p>
           </div>
         </div>
 
         <button className="btn-edit-profile" onClick={() => setIsEditProfileOpen(true)}>
-          <Edit3 size={15} /> Edit Profile
+          <Edit3 size={15} /> {t("vendor.editProfile")}
         </button>
       </div>
 
@@ -275,7 +277,7 @@ export default function VendorDashboard() {
           <div className="metric-icon"><FileText size={20} /></div>
           <div>
             <div className="metric-num">{tenders.length}</div>
-            <div className="metric-lbl">Available Open Tenders</div>
+            <div className="metric-lbl">{t("vendor.availableOpenTenders")}</div>
           </div>
         </div>
 
@@ -283,7 +285,7 @@ export default function VendorDashboard() {
           <div className="metric-icon"><Send size={20} /></div>
           <div>
             <div className="metric-num">{bids.length}</div>
-            <div className="metric-lbl">Bids Submitted</div>
+            <div className="metric-lbl">{t("vendor.bidsSubmittedMetric")}</div>
           </div>
         </div>
 
@@ -291,7 +293,7 @@ export default function VendorDashboard() {
           <div className="metric-icon"><Award size={20} /></div>
           <div>
             <div className="metric-num">{contracts.length}</div>
-            <div className="metric-lbl">Awarded Contracts</div>
+            <div className="metric-lbl">{t("vendor.awardedContracts")}</div>
           </div>
         </div>
 
@@ -299,7 +301,7 @@ export default function VendorDashboard() {
           <div className="metric-icon"><FileCheck size={20} /></div>
           <div>
             <div className="metric-num">{totalDocsCount}</div>
-            <div className="metric-lbl">Compliance Documents</div>
+            <div className="metric-lbl">{t("vendor.complianceDocuments")}</div>
           </div>
         </div>
       </div>
@@ -307,19 +309,19 @@ export default function VendorDashboard() {
       {/* Navigation Tabs */}
       <div className="vendor-nav-tabs">
         <button className={activeTab === "tenders" ? "nav-tab-btn active" : "nav-tab-btn"} onClick={() => setActiveTab("tenders")}>
-          <FileText size={16} /> Open Tenders ({tenders.length})
+          <FileText size={16} /> {t("vendor.openTenders")} ({tenders.length})
         </button>
         <button className={activeTab === "bids" ? "nav-tab-btn active" : "nav-tab-btn"} onClick={() => setActiveTab("bids")}>
-          <Send size={16} /> My Submitted Bids ({bids.length})
+          <Send size={16} /> {t("vendor.mySubmittedBids")} ({bids.length})
         </button>
         <button className={activeTab === "contracts" ? "nav-tab-btn active" : "nav-tab-btn"} onClick={() => setActiveTab("contracts")}>
-          <Award size={16} /> Awarded Contracts ({contracts.length})
+          <Award size={16} /> {t("vendor.awardedContracts")} ({contracts.length})
         </button>
       </div>
 
       {/* Tab Contents */}
       {loading ? (
-        <div className="vendor-loading">Loading vendor workspace resources...</div>
+        <div className="vendor-loading">{t("vendor.loading")}</div>
       ) : (
         <div className="vendor-tab-body">
           {/* TAB 1: AVAILABLE OPEN TENDERS */}
@@ -327,13 +329,13 @@ export default function VendorDashboard() {
             <div className="vendor-section-card">
               <div className="section-toolbar">
                 <div>
-                  <h2>Public Government Tenders</h2>
-                  <p className="subtext">Browse open procurement requirements and submit compliance bids.</p>
+                  <h2>{t("vendor.publicTendersTitle")}</h2>
+                  <p className="subtext">{t("vendor.publicTendersSubtitle")}</p>
                 </div>
                 <div className="vendor-search-bar">
                   <Search size={16} />
                   <input
-                    placeholder="Search tender reference, department..."
+                    placeholder={t("vendor.searchPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -341,7 +343,7 @@ export default function VendorDashboard() {
               </div>
 
               {filteredTenders.length === 0 ? (
-                <div className="vendor-empty-state">No open tenders match your filter.</div>
+                <div className="vendor-empty-state">{t("vendor.noTendersEmpty")}</div>
               ) : (
                 <div className="tenders-grid">
                   {filteredTenders.map((tender) => {
@@ -350,7 +352,7 @@ export default function VendorDashboard() {
                       <div key={tender.id} className="tender-card-item">
                         <div className="card-top-row">
                           <span className="ref-number">{tender.referenceNumber || tender.id}</span>
-                          <span className="status-badge-open">OPEN FOR BIDDING</span>
+                          <span className="status-badge-open">{t("vendor.openForBidding")}</span>
                         </div>
 
                         <h3 className="tender-item-title">{tender.title}</h3>
@@ -359,23 +361,23 @@ export default function VendorDashboard() {
 
                         <div className="tender-meta-row">
                           <span>
-                            <Clock size={14} /> Deadline:{" "}
-                            {tender.submissionDeadline ? new Date(tender.submissionDeadline).toLocaleDateString() : "N/A"}
+                            <Clock size={14} /> {t("vendor.deadlineLabel")}{" "}
+                            {tender.submissionDeadline ? new Date(tender.submissionDeadline).toLocaleDateString() : t("vendor.notAvailable")}
                           </span>
                         </div>
 
                         <div className="card-action-bar">
                           <button className="btn-view-details" onClick={() => handleOpenTenderDetails(tender.id)}>
-                            Inspect Requirements
+                            {t("vendor.inspectRequirements")}
                           </button>
 
                           {existingBid ? (
                             <span className="bid-submitted-pill">
-                              <CheckCircle2 size={15} /> Bid Submitted ({existingBid.bidReference})
+                              <CheckCircle2 size={15} /> {t("vendor.bidSubmittedLabel")} ({existingBid.bidReference})
                             </span>
                           ) : (
                             <button className="btn-submit-bid-action" onClick={() => handleOpenBidWizard(tender)}>
-                              <Send size={14} /> Submit Bid
+                              <Send size={14} /> {t("vendor.submitBid")}
                             </button>
                           )}
                         </div>
@@ -392,13 +394,13 @@ export default function VendorDashboard() {
             <div className="vendor-section-card">
               <div className="section-toolbar">
                 <div>
-                  <h2>Your Submitted Bids &amp; Document Management</h2>
-                  <p className="subtext">Manage submitted bids and upload required technical &amp; commercial evidence.</p>
+                  <h2>{t("vendor.submittedBidsTitle")}</h2>
+                  <p className="subtext">{t("vendor.submittedBidsSubtitle")}</p>
                 </div>
               </div>
 
               {bids.length === 0 ? (
-                <div className="vendor-empty-state">You have not submitted any bids yet.</div>
+                <div className="vendor-empty-state">{t("vendor.noBidsEmpty")}</div>
               ) : (
                 <div className="bids-workspace-list">
                   {bids.map((bid) => {
@@ -413,41 +415,41 @@ export default function VendorDashboard() {
                             <span className="status-chip-submitted">{bid.submissionStatus}</span>
                           </div>
                           <span className="bid-date-tag">
-                            Submitted on: {new Date(bid.submittedAt).toLocaleString()}
+                            {t("vendor.submittedOn")} {new Date(bid.submittedAt).toLocaleString()}
                           </span>
                         </div>
 
                         <div className="bid-card-body">
-                          <h4>Tender: {tenderInfo?.title || `Tender Ref: ${bid.tenderId}`}</h4>
-                          <p className="bid-dept">{tenderInfo?.department || "Department of Procurement"}</p>
+                          <h4>{t("vendor.tenderLabel")} {tenderInfo?.title || `${t("vendor.tenderRefLabel")} ${bid.tenderId}`}</h4>
+                          <p className="bid-dept">{tenderInfo?.department || t("vendor.deptFallback")}</p>
 
                           {bid.bidMetadata?.quotedPrice > 0 && (
                             <div className="bid-quote-strip">
-                              <span>Quoted Price: <strong>₹ {bid.bidMetadata.quotedPrice.toLocaleString("en-IN")}</strong></span>
-                              <span>Delivery Timeline: <strong>{bid.bidMetadata.deliveryTimelineDays || 30} Days</strong></span>
+                              <span>{t("vendor.quotedPrice")} <strong>₹ {bid.bidMetadata.quotedPrice.toLocaleString("en-IN")}</strong></span>
+                              <span>{t("vendor.deliveryTimeline")} <strong>{bid.bidMetadata.deliveryTimelineDays || 30} {t("vendor.daysUnit")}</strong></span>
                             </div>
                           )}
 
                           {/* Uploaded Documents List */}
                           <div className="bid-docs-section">
                             <h5>
-                              <FileCheck size={16} /> Submitted Documents ({bidDocs.length})
+                              <FileCheck size={16} /> {t("vendor.submittedDocuments")} ({bidDocs.length})
                             </h5>
 
                             {bidDocs.length === 0 ? (
-                              <p className="no-docs-text">No documents uploaded yet. Upload technical specification, ISO certificates, or warranty letters below.</p>
+                              <p className="no-docs-text">{t("vendor.noDocsText")}</p>
                             ) : (
                               <div className="docs-flex-list">
                                 {bidDocs.map((doc) => (
                                   <div key={doc.id} className="doc-item-pill">
                                     <div className="doc-info font-bold">
                                       <span>{doc.originalFilename}</span>
-                                      <small>{doc.documentType} • {(doc.fileSize / 1024).toFixed(1)} KB</small>
+                                      <small>{doc.documentType} • {(doc.fileSize / 1024).toFixed(1)} {t("vendor.fileSizeUnit")}</small>
                                     </div>
                                     <button
                                       onClick={() => handleDownloadDoc(doc)}
                                       className="btn-download-doc"
-                                      title="Download file"
+                                      title={t("vendor.downloadFileTitle")}
                                     >
                                       <Download size={13} />
                                     </button>
@@ -462,18 +464,18 @@ export default function VendorDashboard() {
                             {activeUploadBidId === bid.id ? (
                               <form onSubmit={(e) => handleUploadDocument(e, bid.id)} className="upload-form-expanded">
                                 <div className="form-row">
-                                  <label>Document Category</label>
+                                  <label>{t("vendor.docCategoryLabel")}</label>
                                   <select value={docCategory} onChange={(e) => setDocCategory(e.target.value)}>
-                                    <option value="Technical Proposal">Technical Proposal</option>
-                                    <option value="ISO 9001 Certificate">ISO 9001 Certificate</option>
-                                    <option value="OEM Warranty Letter">OEM Warranty Letter</option>
-                                    <option value="Past Contract Experience">Past Contract Experience</option>
-                                    <option value="Commercial Bid Financial Quote">Commercial Bid Financial Quote</option>
+                                    <option value="Technical Proposal">{t("vendor.docTypeTechnical")}</option>
+                                    <option value="ISO 9001 Certificate">{t("vendor.docTypeIso")}</option>
+                                    <option value="OEM Warranty Letter">{t("vendor.docTypeWarranty")}</option>
+                                    <option value="Past Contract Experience">{t("vendor.docTypeExperience")}</option>
+                                    <option value="Commercial Bid Financial Quote">{t("vendor.docTypeCommercial")}</option>
                                   </select>
                                 </div>
 
                                 <div className="form-row">
-                                  <label>Select Document File (PDF, DOCX, PNG)</label>
+                                  <label>{t("vendor.selectFileLabel")}</label>
                                   <input
                                     type="file"
                                     required
@@ -483,7 +485,7 @@ export default function VendorDashboard() {
 
                                 <div className="form-btn-group">
                                   <button type="submit" disabled={isUploading} className="btn-upload-submit">
-                                    {isUploading ? "Uploading..." : "Upload Document"}
+                                    {isUploading ? t("vendor.uploading") : t("vendor.uploadDocument")}
                                   </button>
                                   <button
                                     type="button"
@@ -493,13 +495,13 @@ export default function VendorDashboard() {
                                       setFileToUpload(null);
                                     }}
                                   >
-                                    Cancel
+                                    {t("vendor.cancel")}
                                   </button>
                                 </div>
                               </form>
                             ) : (
                               <button className="btn-trigger-upload" onClick={() => setActiveUploadBidId(bid.id)}>
-                                <Upload size={14} /> Upload New Bid Document
+                                <Upload size={14} /> {t("vendor.uploadNewDoc")}
                               </button>
                             )}
                           </div>
@@ -517,28 +519,28 @@ export default function VendorDashboard() {
             <div className="vendor-section-card">
               <div className="section-toolbar">
                 <div>
-                  <h2>Official Awarded Contracts</h2>
-                  <p className="subtext">Contracts awarded to your organization by procurement evaluation officers.</p>
+                  <h2>{t("vendor.awardedContractsTitle")}</h2>
+                  <p className="subtext">{t("vendor.awardedContractsSubtitle")}</p>
                 </div>
               </div>
 
               {contracts.length === 0 ? (
-                <div className="vendor-empty-state">No contracts awarded yet.</div>
+                <div className="vendor-empty-state">{t("vendor.noContractsEmpty")}</div>
               ) : (
                 <div className="contracts-grid">
                   {contracts.map((contract) => (
                     <div key={contract.id} className="vendor-contract-card">
                       <div className="contract-card-header">
                         <span className="contract-ref-badge">{contract.contractReference}</span>
-                        <span className="award-active-badge">ACTIVE CONTRACT</span>
+                        <span className="award-active-badge">{t("vendor.activeContract")}</span>
                       </div>
-                      <h3>Contract Awarded</h3>
+                      <h3>{t("vendor.contractAwarded")}</h3>
                       <p className="award-date">
-                        Award Date: {new Date(contract.awardedAt).toLocaleDateString()}
+                        {t("vendor.awardDateLabel")} {new Date(contract.awardedAt).toLocaleDateString()}
                       </p>
                       <div className="contract-actions">
                         <span className="award-eligible-tag">
-                          <CheckCircle2 size={15} /> Fully Compliant &amp; Assigned
+                          <CheckCircle2 size={15} /> {t("vendor.compliantAssigned")}
                         </span>
                       </div>
                     </div>
@@ -565,10 +567,10 @@ export default function VendorDashboard() {
             </div>
 
             <div className="modal-body">
-              <p className="modal-dept">Department: {selectedTender.department}</p>
+              <p className="modal-dept">{t("vendor.departmentLabel")} {selectedTender.department}</p>
               <p className="modal-desc">{selectedTender.description}</p>
 
-              <h4 className="reqs-title">Mandatory Tender Compliance Requirements</h4>
+              <h4 className="reqs-title">{t("vendor.mandatoryRequirements")}</h4>
               {selectedTender.requirements && selectedTender.requirements.length > 0 ? (
                 <div className="reqs-list">
                   {selectedTender.requirements.map((req) => (
@@ -582,13 +584,13 @@ export default function VendorDashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="no-reqs-text">Requirements checklist items are being extracted by central procurement.</p>
+                <p className="no-reqs-text">{t("vendor.noReqsText")}</p>
               )}
             </div>
 
             <div className="modal-footer">
               <button className="btn-secondary-modal" onClick={() => setSelectedTender(null)}>
-                Close
+                {t("vendor.close")}
               </button>
               {!bids.some((b) => b.tenderId === selectedTender.id) && (
                 <button
@@ -597,7 +599,7 @@ export default function VendorDashboard() {
                     handleOpenBidWizard(selectedTender);
                   }}
                 >
-                  Prepare &amp; Submit Bid
+                  {t("vendor.prepareSubmitBid")}
                 </button>
               )}
             </div>
@@ -611,8 +613,8 @@ export default function VendorDashboard() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div>
-                <span className="modal-ref-tag">BID PREPARATION WIZARD</span>
-                <h2>Submit Bid for {selectedTender.referenceNumber}</h2>
+                <span className="modal-ref-tag">{t("vendor.bidWizardTag")}</span>
+                <h2>{t("vendor.submitBidFor")} {selectedTender.referenceNumber}</h2>
               </div>
               <button className="modal-close-btn" onClick={() => setIsBiddingModalOpen(false)}>
                 <X size={18} />
@@ -627,19 +629,19 @@ export default function VendorDashboard() {
                 </div>
 
                 <div className="form-group-modal">
-                  <label htmlFor="price">Quoted Commercial Price (INR ₹)</label>
+                  <label htmlFor="price">{t("vendor.quotedPriceLabel")}</label>
                   <input
                     id="price"
                     type="number"
                     required
-                    placeholder="e.g. 4500000"
+                    placeholder={t("vendor.pricePlaceholder")}
                     value={bidForm.price}
                     onChange={(e) => setBidForm({ ...bidForm, price: e.target.value })}
                   />
                 </div>
 
                 <div className="form-group-modal">
-                  <label htmlFor="timeline">Execution &amp; Delivery Timeline (Days)</label>
+                  <label htmlFor="timeline">{t("vendor.timelineLabel")}</label>
                   <input
                     id="timeline"
                     type="number"
@@ -651,11 +653,11 @@ export default function VendorDashboard() {
                 </div>
 
                 <div className="form-group-modal">
-                  <label htmlFor="remarks">Technical Remarks / Offer Notes</label>
+                  <label htmlFor="remarks">{t("vendor.remarksLabel")}</label>
                   <textarea
                     id="remarks"
                     rows={3}
-                    placeholder="Provide additional details regarding OEM authorization, ISO compliance, etc."
+                    placeholder={t("vendor.remarksPlaceholder")}
                     value={bidForm.remarks}
                     onChange={(e) => setBidForm({ ...bidForm, remarks: e.target.value })}
                   />
@@ -664,10 +666,10 @@ export default function VendorDashboard() {
 
               <div className="modal-footer">
                 <button type="button" className="btn-secondary-modal" onClick={() => setIsBiddingModalOpen(false)}>
-                  Cancel
+                  {t("vendor.cancel")}
                 </button>
                 <button type="submit" className="btn-primary-modal">
-                  <Send size={15} /> Confirm &amp; Submit Official Bid
+                  <Send size={15} /> {t("vendor.confirmSubmitBid")}
                 </button>
               </div>
             </form>
@@ -680,7 +682,7 @@ export default function VendorDashboard() {
         <div className="modal-overlay" onClick={() => setIsEditProfileOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Edit Vendor Organization Profile</h2>
+              <h2>{t("vendor.editProfileTitle")}</h2>
               <button className="modal-close-btn" onClick={() => setIsEditProfileOpen(false)}>
                 <X size={18} />
               </button>
@@ -689,7 +691,7 @@ export default function VendorDashboard() {
             <form onSubmit={handleSaveProfile}>
               <div className="modal-body">
                 <div className="form-group-modal">
-                  <label>Legal Company Name</label>
+                  <label>{t("vendor.legalNameLabel")}</label>
                   <input
                     type="text"
                     required
@@ -699,7 +701,7 @@ export default function VendorDashboard() {
                 </div>
 
                 <div className="form-group-modal">
-                  <label>Official Contact Phone</label>
+                  <label>{t("vendor.phoneLabel")}</label>
                   <input
                     type="text"
                     required
@@ -709,19 +711,19 @@ export default function VendorDashboard() {
                 </div>
 
                 <div className="form-group-modal">
-                  <label>Business Category</label>
+                  <label>{t("vendor.businessCategoryLabel")}</label>
                   <select
                     value={profileForm.category}
                     onChange={(e) => setProfileForm({ ...profileForm, category: e.target.value })}
                   >
-                    <option value="MSME">MSME Micro / Small</option>
-                    <option value="Startup">DPIIT Registered Startup</option>
-                    <option value="Enterprise">Enterprise Bidder</option>
+                    <option value="MSME">{t("vendor.categoryMsme")}</option>
+                    <option value="Startup">{t("vendor.categoryStartup")}</option>
+                    <option value="Enterprise">{t("vendor.categoryEnterprise")}</option>
                   </select>
                 </div>
 
                 <div className="form-group-modal">
-                  <label>GSTIN Number</label>
+                  <label>{t("vendor.gstinNumberLabel")}</label>
                   <input
                     type="text"
                     required
@@ -733,10 +735,10 @@ export default function VendorDashboard() {
 
               <div className="modal-footer">
                 <button type="button" className="btn-secondary-modal" onClick={() => setIsEditProfileOpen(false)}>
-                  Cancel
+                  {t("vendor.cancel")}
                 </button>
                 <button type="submit" className="btn-primary-modal">
-                  <Check size={15} /> Save Changes
+                  <Check size={15} /> {t("vendor.saveChanges")}
                 </button>
               </div>
             </form>

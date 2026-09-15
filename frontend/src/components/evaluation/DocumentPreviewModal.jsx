@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Download, X } from "lucide-react";
 import { fetchDocumentBlob } from "@/services/evaluationService";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function DocumentPreviewModal({ doc, onClose }) {
+    const { t } = useLanguage();
     const [state, setState] = useState({ status: "idle", url: "", mimeType: "", message: "" });
 
     useEffect(() => {
@@ -17,13 +19,13 @@ export default function DocumentPreviewModal({ doc, onClose }) {
                 setState({ status: "ready", url: objectUrl, mimeType: blob.type, message: "" });
             })
             .catch(err => {
-                if (!cancelled) setState({ status: "error", url: "", mimeType: "", message: err.message || "Could not load this document." });
+                if (!cancelled) setState({ status: "error", url: "", mimeType: "", message: err.message || t("preview.loadError") });
             });
         return () => {
             cancelled = true;
             if (objectUrl) window.URL.revokeObjectURL(objectUrl);
         };
-    }, [doc]);
+    }, [doc, t]);
 
     if (!doc) return null;
 
@@ -46,34 +48,34 @@ export default function DocumentPreviewModal({ doc, onClose }) {
             <div className="doc-preview-modal" onClick={event => event.stopPropagation()}>
                 <header className="doc-preview-header">
                     <div className="doc-preview-title">
-                        <b>{doc.originalFilename || "Document"}</b>
-                        <small>{(doc.documentType || "document").replace(/_/g, " ")}</small>
+                        <b>{doc.originalFilename || t("preview.fallbackTitle")}</b>
+                        <small>{(doc.documentType || t("preview.fallbackType")).replace(/_/g, " ")}</small>
                     </div>
                     <div className="doc-preview-actions">
                         {state.status === "ready" && (
                             <button className="btn btn-ghost" onClick={handleDownload}>
-                                <Download size={14} /> Download
+                                <Download size={14} /> {t("preview.download")}
                             </button>
                         )}
-                        <button className="doc-preview-close" onClick={onClose} aria-label="Close preview">
+                        <button className="doc-preview-close" onClick={onClose} aria-label={t("preview.closeLabel")}>
                             <X size={18} />
                         </button>
                     </div>
                 </header>
                 <div className="doc-preview-body">
-                    {state.status === "loading" && <div className="doc-preview-status">Loading document…</div>}
+                    {state.status === "loading" && <div className="doc-preview-status">{t("preview.loading")}</div>}
                     {state.status === "error" && (
                         <div className="doc-preview-status doc-preview-error">
                             <AlertTriangle size={16} /> {state.message}
                         </div>
                     )}
-                    {state.status === "ready" && isPdf && <iframe title={doc.originalFilename || "Document preview"} src={state.url} className="doc-preview-frame" />}
-                    {state.status === "ready" && !isPdf && isImage && <img src={state.url} alt={doc.originalFilename || "Document preview"} className="doc-preview-image" />}
+                    {state.status === "ready" && isPdf && <iframe title={doc.originalFilename || t("preview.previewLabel")} src={state.url} className="doc-preview-frame" />}
+                    {state.status === "ready" && !isPdf && isImage && <img src={state.url} alt={doc.originalFilename || t("preview.previewLabel")} className="doc-preview-image" />}
                     {state.status === "ready" && !isPdf && !isImage && (
                         <div className="doc-preview-status">
-                            This file type can't be previewed in the browser.
+                            {t("preview.noPreview")}
                             <button className="btn btn-ghost" onClick={handleDownload} style={{ marginLeft: 10 }}>
-                                <Download size={14} /> Download instead
+                                <Download size={14} /> {t("preview.downloadInstead")}
                             </button>
                         </div>
                     )}
