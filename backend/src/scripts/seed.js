@@ -382,6 +382,30 @@ export async function seedDatabase() {
     }
   }
 
+  // ---- Fresh OPEN tender for the live vendor journey (no bids yet) ----
+  // Vendors see this in Open Tenders, submit a bid and upload documents;
+  // the officer then verifies it end-to-end on GEM/2026/B/1001-style flow.
+  if (!(await Tender.findOne({ referenceNumber: "GEM/2026/B/1002" }))) {
+    const openTender = await Tender.create({
+      referenceNumber: "GEM/2026/B/1002",
+      title: "Supply of Multifunction Printers for Regional Offices",
+      department: "Department of Administrative Reforms",
+      description: "Supply, installation and 3-year maintenance of 120 network multifunction printers with minimum 50 percent local content.",
+      submissionDeadline: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+      status: "OPEN",
+      createdBy: officerUser._id,
+    });
+    await Requirement.insertMany([
+      { tenderId: openTender.toObject()._id, title: "Udyam / MSME registration", description: "Bidder must hold valid Udyam registration.", category: "Statutory", mandatory: true, requirementOrder: 1 },
+      { tenderId: openTender.toObject()._id, title: "GST registration and return filing", description: "Active GSTIN with returns filed up to date.", category: "Statutory", mandatory: true },
+      { tenderId: openTender.toObject()._id, title: "Minimum average annual turnover", description: "Minimum average annual turnover: Rs 5000000 (Rs 50 Lakh) over last 3 years.", category: "Financial", mandatory: true },
+      { tenderId: openTender.toObject()._id, title: "Minimum years of experience", description: "Minimum 3 years of experience in office equipment supply.", category: "Eligibility", mandatory: true },
+      { tenderId: openTender.toObject()._id, title: "Earnest Money Deposit", description: "Minimum EMD required: Rs 200000.", category: "Financial", mandatory: true },
+      { tenderId: openTender.toObject()._id, title: "OEM Authorisation", description: "Valid OEM authorisation / MAF for quoted printers.", category: "Technical", mandatory: true },
+    ]);
+    console.log("Created open tender: GEM/2026/B/1002");
+  }
+
   console.log("Database seed completed successfully!");
   console.log("Logins (password for all: Password123!):");
   console.log("  officer: officer@procurement.gov.in");
