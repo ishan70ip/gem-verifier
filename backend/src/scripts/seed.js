@@ -4,7 +4,10 @@
 // `npm run seed` with no manual uploads needed.
 import "dotenv/config";
 import bcrypt from "bcryptjs";
-import { connectDatabase, User, Vendor, Tender, Requirement, Bid, Document } from "../db/models.js";
+import {
+  connectDatabase, User, Vendor, Tender, Requirement, Bid, Document,
+  Evaluation as EvaluationModel, ComplianceResult, Award,
+} from "../db/models.js";
 import { saveBuffer } from "../services/storage.js";
 
 // Minimal single-page text PDF writer (no dependencies).
@@ -217,6 +220,165 @@ export async function seedDatabase() {
         status: "ACTIVE",
         uploadedAt: new Date(),
       });
+    }
+  }
+
+  // ---- Historic awarded contracts (past tenders, existing vendors only) ----
+  // Gives vendor contract-history tabs and the officer Vendors pages real
+  // content without touching the live GEM/2026/B/1001 showcase tender.
+  const HISTORY = [
+    {
+      referenceNumber: "GEM/2025/B/0874",
+      title: "Supply of Desktop Computers for Field Offices",
+      department: "Department of Revenue",
+      description: "Supply and installation of 250 energy-efficient desktop computers.",
+      awardedVendorCode: "VEN-ACME-001",
+      awardedAt: new Date("2026-03-15T10:00:00Z"),
+      contractReference: "CON-2025-0874",
+      price: 12800000,
+      requirements: [
+        { title: "Udyam / MSME registration", description: "Valid Udyam registration.", category: "Statutory", mandatory: true },
+        { title: "GST registration and return filing", description: "Active GSTIN.", category: "Statutory", mandatory: true },
+        { title: "Minimum average annual turnover", description: "Minimum average annual turnover: Rs 5000000 over last 3 years.", category: "Financial", mandatory: true },
+        { title: "On-site warranty", description: "Minimum 3 years comprehensive on-site warranty.", category: "Technical", mandatory: false },
+      ],
+      docs: [
+        { type: "Award Letter", name: "CON-2025-0874-award-letter.pdf", lines: ["GOVERNMENT E-MARKETPLACE - CONTRACT AWARD", "Contract: CON-2025-0874", "Tender: GEM/2025/B/0874", "Awarded to: Acme Procurement Systems Pvt Ltd", "Value: Rs 1,28,00,000. Delivery in 45 days.", "All statutory verifications passed (score 100%)."] },
+        { type: "Completion Certificate", name: "CON-2025-0874-completion.pdf", lines: ["WORK COMPLETION CERTIFICATE", "Contract CON-2025-0874 executed successfully.", "250 desktops installed and accepted. No penalties."] },
+      ],
+    },
+    {
+      referenceNumber: "GEM/2025/B/0932",
+      title: "Annual Maintenance of Network Infrastructure",
+      department: "Department of Posts",
+      description: "Comprehensive annual maintenance of district network infrastructure.",
+      awardedVendorCode: "VEN-BRIGHT-002",
+      awardedAt: new Date("2026-06-02T10:00:00Z"),
+      contractReference: "CON-2025-0932",
+      price: 3600000,
+      requirements: [
+        { title: "Udyam / MSME registration", description: "Valid Udyam registration.", category: "Statutory", mandatory: true },
+        { title: "PAN and Income Tax compliance", description: "Valid PAN with latest ITR filed.", category: "Statutory", mandatory: true },
+        { title: "Minimum years of experience", description: "Minimum 3 years of experience in network maintenance.", category: "Eligibility", mandatory: true },
+      ],
+      docs: [
+        { type: "Award Letter", name: "CON-2025-0932-award-letter.pdf", lines: ["GOVERNMENT E-MARKETPLACE - CONTRACT AWARD", "Contract: CON-2025-0932", "Tender: GEM/2025/B/0932", "Awarded to: Brightline Technologies LLP", "Value: Rs 36,00,000 for 12 months AMC."] },
+      ],
+    },
+  ];
+
+  for (const h of HISTORY) {
+    let tender = await Tender.findOne({ referenceNumber: h.referenceNumber });
+    if (!tender) {
+      tender = await Tender.create({
+        referenceNumber: h.referenceNumber,
+        title: h.title,
+        department: h.department,
+        description: h.description,
+        submissionDeadline: new Date(h.awardedAt.getTime() - 30 * 24 * 60 * 60 * 1000),
+        status: "AWARDED",
+        createdBy: officerUser._id,
+        awardedVendorId: null,
+      });
+      await Requirement.insertMany(
+        h.requirements.map((item, index) => ({
+          tenderId: tender.toObject ? tender.toObject()._id : tender._id,
+          title: item.title,
+          description: item.description,
+          category: item.category,
+          mandatory: item.mandatory,
+          requirementOrder: index + 1,
+        }))
+      );
+      console.log("Created historic tender:", h.referenceNumber);
+    }
+    const tPlain = tender.toObject ? tender.toObject() : tender;
+    const profile = await Vendor.findOne({ vendorCode: h.awardedVendorCode });
+    const profilePlain = profile.toObject ? profile.toObject() : profile;
+    await Tender.findByIdAndUpdate(tPlain._id, { awardedVendorId: profilePlain._id });
+
+    let bid = await Bid.findOne({ tenderId: tPlain._id, vendorId: profilePlain._id });
+    if (!bid) {
+      bid = await Bid.create({
+        tenderId: tPlain._id,
+        vendorId: profilePlain._id,
+        submissionStatus: "SUBMITTED",
+        submittedAt: new Date(h.awardedAt.getTime() - 20 * 24 * 60 * 60 * 1000),
+        bidReference: `BID-${h.awardedVendorCode.split("-")[1]}-2025`,
+        bidMetadata: { quotedPrice: h.price, deliveryTimelineDays: 45, remarks: "Historic seeded bid" },
+      });
+    }
+    const bidPlain = bid.toObject ? bid.toObject() : bid;
+
+    let evaluation = await EvaluationModel.findOne({ tenderId: tPlain._id });
+    if (!evaluation) {
+      evaluation = await EvaluationModel.create({
+        tenderId: tPlain._id,
+        status: "AWARDED",
+        startedBy: officerUser._id,
+        completedBy: officerUser._id,
+        startedAt: new Date(h.awardedAt.getTime() - 10 * 24 * 60 * 60 * 1000),
+        completedAt: h.awardedAt,
+        overallSummary: JSON.stringify({ mode: "seeded-history", generatedAt: h.awardedAt, vendors: {} }),
+      });
+      const reqs = await Requirement.find({ tenderId: tPlain._id }).lean();
+      await ComplianceResult.insertMany(
+        reqs.map((r) => ({
+          evaluationId: evaluation.toObject ? evaluation.toObject()._id : evaluation._id,
+          tenderId: tPlain._id,
+          requirementId: r._id,
+          vendorId: profilePlain._id,
+          bidId: bidPlain._id,
+          status: "compliant",
+          evidenceText: `Historic record: ${r.title} verified at award.`,
+          explanation: "Migrated historic award; all checks passed at time of award.",
+          confidence: 0.95,
+          determinationSource: "seeded-history",
+          humanReviewed: true,
+          reviewedBy: officerUser._id,
+          reviewedAt: h.awardedAt,
+        }))
+      );
+    }
+    const evalPlain = evaluation.toObject ? evaluation.toObject() : evaluation;
+
+    let award = await Award.findOne({ tenderId: tPlain._id, vendorId: profilePlain._id });
+    if (!award) {
+      award = await Award.create({
+        tenderId: tPlain._id,
+        evaluationId: evalPlain._id,
+        vendorId: profilePlain._id,
+        status: "ACTIVE",
+        awardedAt: h.awardedAt,
+        awardedBy: officerUser._id,
+        contractReference: h.contractReference,
+        contractStartDate: h.awardedAt,
+        contractEndDate: new Date(h.awardedAt.getTime() + 365 * 24 * 60 * 60 * 1000),
+      });
+      console.log("Created historic award:", h.contractReference);
+    }
+    const awardPlain = award.toObject ? award.toObject() : award;
+
+    for (const d of h.docs) {
+      const exists = await Document.findOne({ contractAwardId: awardPlain._id, originalFilename: d.name });
+      if (!exists) {
+        const stored = await saveBuffer(d.name, makePdf(d.lines), "application/pdf");
+        await Document.create({
+          tenderId: tPlain._id,
+          bidId: bidPlain._id,
+          vendorId: profilePlain._id,
+          contractAwardId: awardPlain._id,
+          documentType: d.type,
+          originalFilename: d.name,
+          storagePath: stored.storagePath,
+          mimeType: "application/pdf",
+          fileSize: stored.fileSize,
+          uploadedBy: officerUser._id,
+          visibility: "vendor_and_officer",
+          status: "ACTIVE",
+          uploadedAt: h.awardedAt,
+        });
+      }
     }
   }
 
