@@ -10,3 +10,20 @@ Regenerate anytime: `node src/scripts/make-demo-docs.js` (from `backend/`).
 
 Seeded bid PDFs (already in the system, no upload needed) live in
 `backend/uploads/` and are covered by `npm run seed`.
+
+## Styled certificate pack (`cert-pack/`)
+
+11 government-styled PDFs (PAN cards, GST certificates, Udyam certificates,
+ISO certificate, OEM letter, Startup certificate) — authentic layout, real
+text layers, data matched to the mock portal registry. Attached to the seeded
+bids with:
+
+```bash
+cd backend
+node src/scripts/attach-doc-pack.js   # idempotent, then restart the backend
+node src/scripts/make-doc-pack.js     # regenerate the PDFs themselves
+```
+
+Verification scores are unchanged with the pack attached (Acme 100 ELIGIBLE,
+Brightline CONDITIONAL on the missing OEM letter, Shady NOT ELIGIBLE) —
+proven by re-running analysis after attaching.
