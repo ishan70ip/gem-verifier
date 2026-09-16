@@ -159,6 +159,26 @@ export async function analyzeEvaluation(evaluationId, actor) {
       Object.assign(verdict, scoreVerdict(verdict.checks, vendor));
     }
 
+    // Per-check source attribution: point each result at the most relevant
+    // document (ISO finding -> ISO certificate, PAN -> PAN card, ...) so the
+    // evidence drawer opens the matching visual certificate instead of
+    // always defaulting to the first uploaded file.
+    const hayOf = (d) => `${d.originalFilename || ""} ${d.documentType || ""}`.toLowerCase();
+    const technicalDoc = docs.find((d) => /technical|proposal/i.test(hayOf(d))) || docs[0];
+    const docForCheck = (check) => {
+      const find = (re) => docs.find((d) => re.test(hayOf(d)));
+      switch (check.key) {
+        case "udyam": return find(/udyam/) || technicalDoc;
+        case "gst": return find(/gst/) || technicalDoc;
+        case "pan_itr": return find(/pan(?!el)|pan-card/) || find(/pan/) || technicalDoc;
+        case "epfo_esic": return find(/epfo|esic|provident/) || technicalDoc;
+        case "startup_nsic": return find(/startup|dpiit|nsic/) || technicalDoc;
+        case "iso": return find(/iso/) || technicalDoc;
+        case "oem": return find(/oem|maf|authori/) || technicalDoc;
+        default: return technicalDoc;
+      }
+    };
+
     const rows = verdict.checks.map((check) => ({
       evaluationId: ev._id,
       tenderId: tender._id,
@@ -167,7 +187,7 @@ export async function analyzeEvaluation(evaluationId, actor) {
       bidId: bid._id,
       status: check.status,
       evidenceText: check.evidenceText,
-      sourceDocumentId,
+      sourceDocumentId: (docForCheck(check) || {})._id || sourceDocumentId,
       pageNumber: null,
       explanation: check.explanation,
       confidence: check.confidence,
