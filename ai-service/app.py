@@ -99,20 +99,54 @@ class TfidfEngine:
 # --------------------------------------------------------------------------
 # engine 1 (optional): SBERT bi-encoder + trained cross-encoder rerank
 # --------------------------------------------------------------------------
+class _HfReranker:
+    """sentence-transformers CrossEncoder from ./models/reranker dir."""
+
+    def __init__(self, path="./models/reranker"):
+        from sentence_transformers import CrossEncoder  # noqa
+
+        self.ce = CrossEncoder(path)
+
+    def predict(self, pairs):
+        return [float(x) for x in self.ce.predict(pairs).tolist()]
+
+
+class _OnnxReranker:
+    """INT8 ONNX reranker (export_onnx.py output) + HF tokenizer."""
+
+    def __init__(self, onnx_path="./models/reranker-int8-q.onnx", tok_dir="./models/reranker"):
+        import onnxruntime as ort  # noqa
+        from transformers import AutoTokenizer  # noqa
+
+        self.sess = ort.InferenceSession(onnx_path, providers=["CPUExecutionProvider"])
+        self.tok = AutoTokenizer.from_pretrained(tok_dir)
+
+    def predict(self, pairs):
+        import numpy as np  # noqa
+
+        enc = self.tok([p[0] for p in pairs], [p[1] for p in pairs],
+                       padding=True, truncation=True, max_length=256, return_tensors="np")
+        (logits,) = self.sess.run(["logit"], {
+            "input_ids": enc["input_ids"].astype(np.int64),
+            "attention_mask": enc["attention_mask"].astype(np.int64),
+        })
+        return [float(1.0 / (1.0 + np.exp(-x[0]))) for x in logits]
+
+
 class SbertEngine:
     name = "sbert+crossencoder"
 
     def __init__(self):
-        from sentence_transformers import SentenceTransformer, CrossEncoder  # noqa
+        from sentence_transformers import SentenceTransformer  # noqa
 
         self.bi = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
         self.ce = None
-        try:
-            # fine-tuned reranker if present (training/export_onnx.py output
-            # converted back, or local ./models/reranker dir)
-            self.ce = CrossEncoder("./models/reranker")
-        except Exception:
-            self.ce = None
+        for loader in (_HfReranker, _OnnxReranker):
+            try:
+                self.ce = loader()
+                break
+            except Exception:
+                continue
 
     def score(self, requirement, chunks, top_k=3):
         import numpy as np  # noqa
