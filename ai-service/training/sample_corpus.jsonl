@@ -1,0 +1,16 @@
+{"requirement": "Minimum average annual turnover: Rs 10000000 over last 3 years.", "chunk": "Average annual turnover of Rs 4.5 Crore for last 3 financial years.", "label": 1}
+{"requirement": "Minimum average annual turnover: Rs 10000000 over last 3 years.", "chunk": "Annual turnover Rs 40 Lakh approx.", "label": 0}
+{"requirement": "Minimum EMD required: Rs 500000.", "chunk": "EMD of Rs 500000 enclosed vide demand draft.", "label": 1}
+{"requirement": "Minimum EMD required: Rs 500000.", "chunk": "EMD exempted for MSE bidders as per GeM terms.", "label": 0}
+{"requirement": "Minimum 5 years of experience in relevant supplies.", "chunk": "12 years of experience executing data centre projects.", "label": 1}
+{"requirement": "Minimum 5 years of experience in relevant supplies.", "chunk": "2 years of experience in general trading.", "label": 0}
+{"requirement": "Vendor must possess valid ISO 9001 certificate.", "chunk": "ISO 9001:2015 certified. Certificate valid till 2027.", "label": 1}
+{"requirement": "Vendor must possess valid ISO 9001 certificate.", "chunk": "ISO 9001 applied for; certificate awaited.", "label": 0}
+{"requirement": "Valid OEM authorisation / MAF required.", "chunk": "OEM Authorization from the manufacturer attached (MAF dated 2026).", "label": 1}
+{"requirement": "Valid OEM authorisation / MAF required.", "chunk": "We use only OEM quality spare parts.", "label": 0}
+{"requirement": "Minimum 50 percent local content.", "chunk": "Local content 62 percent under Make in India.", "label": 1}
+{"requirement": "Minimum 50 percent local content.", "chunk": "Imported components with global warranty support.", "label": 0}
+{"requirement": "Minimum 3 years comprehensive on-site warranty.", "chunk": "5 years comprehensive on-site warranty offered.", "label": 1}
+{"requirement": "Minimum 3 years comprehensive on-site warranty.", "chunk": "1 year carry-in warranty applicable.", "label": 0}
+{"requirement": "Minimum EMD required: Rs 500000.", "chunk": "Bayaana rashi Rs 500000 sanlagn hai.", "label": 1}
+{"requirement": "Minimum average annual turnover: Rs 10000000 over last 3 years.", "chunk": "pichhle 3 salon ka ausat turnover Rs 4.5 Crore raha.", "label": 1}
