@@ -5,6 +5,7 @@
 import { extractTextFromFile } from "./extract.js";
 import { parseTenderThresholds, runComplianceForVendor, scoreVerdict, KEY_TO_REQ } from "./complianceEngine.js";
 import { geminiExtract, geminiAdjudicate, geminiMode } from "./gemini.js";
+import { findEvidence } from "./evidenceFinder.js";
 import {
   Bid,
   ComplianceResult,
@@ -96,6 +97,21 @@ export async function analyzeEvaluation(evaluationId, actor) {
   const vendors = await Vendor.find({ _id: { $in: bids.map((b) => b.vendorId) } }).lean();
 
   const mode = geminiMode();
+  // Evidence-finder sidecar: probe once per run. Absent/unhealthy -> the
+  // built-in heuristic path below runs exactly as before (zero behavior
+  // change when AI_SERVICE_URL is unset).
+  let useEvidenceService = false;
+  if (process.env.AI_SERVICE_URL) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2000);
+      const probe = await fetch(`${process.env.AI_SERVICE_URL.replace(/\/$/, "")}/health`, { signal: controller.signal });
+      clearTimeout(timer);
+      useEvidenceService = probe.ok;
+    } catch {
+      useEvidenceService = false;
+    }
+  }
   await ComplianceResult.deleteMany({ evaluationId: ev._id });
 
   const vendorSummaries = {};
@@ -157,6 +173,25 @@ export async function analyzeEvaluation(evaluationId, actor) {
       }
       // Recompute score/risk/recommendation after adjudication upgrades.
       Object.assign(verdict, scoreVerdict(verdict.checks, vendor));
+    }
+
+    // Evidence-finder quote upgrade (sidecar only): replace the keyword
+    // quote with the retrieved top quote when confident. Verdicts untouched.
+    if (useEvidenceService) {
+      for (const check of verdict.checks) {
+        const reqDesc = requirements.find((r) => (r._id || r.id) === check.requirementId)?.description || "";
+        const hit = await findEvidence({
+          title: check.requirementTitle || check.key,
+          description: reqDesc,
+          docText,
+          topK: 1,
+        });
+        if (hit && hit.quote && hit.score >= 0.6) {
+          check.exactQuote = hit.quote;
+          check.evidenceText = `Service-retrieved (${hit.method}, score ${hit.score}): "${hit.quote}"`;
+          check.determinationSource = `${check.determinationSource || "ai-heuristic"}+evidence-service`;
+        }
+      }
     }
 
     // Per-check source attribution: point each result at the most relevant
