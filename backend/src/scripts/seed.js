@@ -76,6 +76,11 @@ const VENDORS = [
       "Udyam Registration: UDYAM-KA-03-0001112",
       "Annual turnover Rs 40 Lakh approx.",
       "2 years of experience in general trading.",
+      "EMD payment of earnest money deposit via demand draft under process.",
+      "ISO certification under process, quality audit pending.",
+      "OEM quotation received from manufacturer, papers pending.",
+      "Standard warranty and support terms apply.",
+      "Preference for indigenous local content suppliers noted.",
     ],
   },
 ];
