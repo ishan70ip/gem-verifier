@@ -7,7 +7,6 @@ import VendorDashboard from "./pages/VendorDashboard";
 import Dashboard from "./pages/Dashboard";
 import TendersPage from "./pages/TendersPage";
 import TenderDetailPage from "./pages/TenderDetailPage";
-import NewTenderPage from "./pages/NewTenderPage";
 import EvaluationPage from "./pages/EvaluationPage";
 import VendorsPage from "./pages/VendorsPage";
 import VendorProfilePage from "./pages/VendorProfilePage";
@@ -65,14 +64,6 @@ export default function App() {
                 element={
                   <ProtectedRoute allowedRole="officer">
                     <TendersPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/tenders/new"
-                element={
-                  <ProtectedRoute allowedRole="officer">
-                    <NewTenderPage />
                   </ProtectedRoute>
                 }
               />

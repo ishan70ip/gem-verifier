@@ -5,12 +5,11 @@ import { Link } from "react-router-dom";
 import { apiRequest } from "../services/apiClient";
 import { subscribeToTable, isRealtimeEnabled } from "../lib/supabase";
 import { useLanguage } from "../context/LanguageContext";
-import { ArrowRight, ArrowUpRight, FilePlus2, FolderOpen, UsersRound, ShieldCheck, Sparkles, Activity, FileText } from "lucide-react";
+import { ArrowRight, ArrowUpRight, FolderOpen, UsersRound, ShieldCheck, Sparkles, Activity, FileText } from "lucide-react";
 
 export default function Dashboard() {
   const { t } = useLanguage();
   const services = [
-    { icon: FilePlus2, label: t("dash.svcNewLabel"), text: t("dash.svcNewText"), to: "/tenders/new", tone: "orange" },
     { icon: FolderOpen, label: t("dash.svcEvalLabel"), text: t("dash.svcEvalText"), to: "/tenders", tone: "blue" },
     { icon: UsersRound, label: t("dash.svcVendorsLabel"), text: t("dash.svcVendorsText"), to: "/vendors", tone: "green" },
   ];
@@ -62,11 +61,11 @@ export default function Dashboard() {
           </h1>
           <p>{t("heroSubtitle")}</p>
           <div className="hero-actions">
-            <Link to="/tenders/new" className="primary-action">
-              <FilePlus2 size={18} /> {t("newEvaluation")} <ArrowRight size={16} />
+            <Link to="/tenders" className="primary-action">
+              <FolderOpen size={18} /> {t("exploreEvaluations")} <ArrowRight size={16} />
             </Link>
-            <Link to="/tenders" className="secondary-action">
-              {t("exploreEvaluations")} <ArrowUpRight size={16} />
+            <Link to="/vendors" className="secondary-action">
+              {t("dash.svcVendorsLabel")} <ArrowUpRight size={16} />
             </Link>
           </div>
         </div>
@@ -109,18 +108,6 @@ export default function Dashboard() {
                 </Link>
               ))}
             </div>
-            <Link to="/tenders/new" className="featured-service">
-              <span className="featured-icon">
-                <FilePlus2 size={22} />
-              </span>
-              <span>
-                <b>{t("dash.createNew")}</b>
-                <small>{t("dash.createNewDesc")}</small>
-              </span>
-              <span className="featured-cta">
-                {t("dash.begin")} <ArrowRight size={15} />
-              </span>
-            </Link>
           </div>
 
           <aside className="insight-stack">

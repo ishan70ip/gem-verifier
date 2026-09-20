@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { listTenders } from "@/services/procurementService";
 import { apiRequest } from "@/services/apiClient";
 import { useEffect, useState } from "react";
-import { Search, Plus, ArrowRight, FileText, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Search, ArrowRight, FileText, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
 function EvaluationCard({ tender }) {
@@ -107,11 +107,11 @@ export default function TendersPage() {
 
   return <AppShell>
     <main className="evaluations-page">
-      <section className="evaluation-page-head"><div><div className="section-kicker"><span className="eyebrow-line" /> {t("tenders.kicker")}</div><h1>{t("tenders.title")}</h1><p>{t("tenders.subtitle")}</p></div><Link to="/tenders/new" className="evaluation-primary"><Plus size={17} /> {t("tenders.newEvaluation")}</Link></section>
+      <section className="evaluation-page-head"><div><div className="section-kicker"><span className="eyebrow-line" /> {t("tenders.kicker")}</div><h1>{t("tenders.title")}</h1><p>{t("tenders.subtitle")}</p></div></section>
       <section className="evaluation-summary"><div className="summary-lead"><span className="summary-emblem"><FileText size={18} /></span><div><b>{filteredTenders.length}</b><span>{normalizedQuery ? t("tenders.matchingEvaluations") : t("tenders.totalEvaluations")}</span></div></div><div className="summary-action"><span>{t("tenders.dataSource")}</span><b>{t("tenders.dataSourceValue")}</b></div></section>
       <section className="evaluation-toolbar"><div className="evaluation-search"><Search size={17} /><input placeholder={t("tenders.searchPlaceholder")} value={query} onChange={event => handleQueryChange(event.target.value)} /></div><button className="filter-button"><SlidersHorizontal size={15} /> {t("tenders.filters")} <ChevronDown size={14} /></button><button className="sort-button">{t("tenders.recentlyUpdated")} <ChevronDown size={14} /></button></section>
       <div className="evaluation-list-heading"><div><div className="section-kicker">{t("tenders.allWorkspaces")}</div><h2>{t("tenders.activeEvaluations")} <span>{filteredTenders.length}</span></h2></div><span className="list-note">{t("tenders.listNote")}</span></div>
-      {filteredTenders.length ? <section className="evaluation-grid">{filteredTenders.map(tender => <EvaluationCard key={tender.id} tender={tender} />)}</section> : <section className="evaluation-table-card"><div className="empty-state"><FileText size={22} /><h3>{normalizedQuery ? `${t("tenders.noMatchPrefix")} "${query.trim()}"` : t("tenders.emptyTitle")}</h3><p>{normalizedQuery ? t("tenders.emptySearchHint") : t("tenders.emptyHint")}</p>{!normalizedQuery && <Link to="/tenders/new" className="evaluation-primary"><Plus size={17} /> {t("tenders.newEvaluation")}</Link>}</div></section>}
+      {filteredTenders.length ? <section className="evaluation-grid">{filteredTenders.map(tender => <EvaluationCard key={tender.id} tender={tender} />)}</section> : <section className="evaluation-table-card"><div className="empty-state"><FileText size={22} /><h3>{normalizedQuery ? `${t("tenders.noMatchPrefix")} "${query.trim()}"` : t("tenders.emptyTitle")}</h3><p>{normalizedQuery ? t("tenders.emptySearchHint") : t("tenders.emptyHint")}</p></div></section>}
     </main>
   </AppShell>;
 }
