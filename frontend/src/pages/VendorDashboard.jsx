@@ -51,6 +51,8 @@ export default function VendorDashboard() {
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({ legalName: "", phone: "", category: "MSME", gstin: "" });
+  const [gemBidId, setGemBidId] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
 
   const showNotification = (text, type = "success") => {
     setNotification({ text, type });
@@ -208,6 +210,31 @@ export default function VendorDashboard() {
     }
   };
 
+  const handleImportGem = async (bidId) => {
+    if (!gemBidId.trim()) {
+      showNotification(t("vendor.gemIdRequired"), "error");
+      return;
+    }
+    try {
+      setIsImporting(true);
+      const res = await apiRequest(`/vendor/bids/${bidId}/import-gem`, {
+        method: "POST",
+        body: JSON.stringify({ gem_bid_id: gemBidId.trim() }),
+      });
+      const imported = res.imported || [];
+      setDocumentsMap((prev) => ({
+        ...prev,
+        [bidId]: [...(prev[bidId] || []), ...imported],
+      }));
+      setGemBidId("");
+      showNotification(t("vendor.gemImportSuccess").replace("{n}", imported.length), "success");
+    } catch (err) {
+      showNotification(err.message, "error");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   // Calculations & Filtering
   const handleDownloadDoc = async (doc) => {
     try {
@@ -236,6 +263,13 @@ export default function VendorDashboard() {
   );
 
   const totalDocsCount = Object.values(documentsMap).reduce((acc, curr) => acc + curr.length, 0);
+
+  // Bid (if any) the vendor already submitted for the tender open in Modal 1.
+  // Its documents can be managed inline: direct upload + GeM import.
+  const modalBid = selectedTender && !isBiddingModalOpen
+    ? bids.find((b) => b.tenderId === selectedTender.id)
+    : null;
+  const modalBidDocs = modalBid ? documentsMap[modalBid.id] || [] : [];
 
   return (
     <AppShell>
@@ -585,6 +619,73 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 <p className="no-reqs-text">{t("vendor.noReqsText")}</p>
+              )}
+
+              {modalBid && (
+                <div className="bid-docs-section" style={{ marginTop: 16 }}>
+                  <h5>
+                    <FileCheck size={16} /> {t("vendor.submittedDocuments")} ({modalBidDocs.length})
+                  </h5>
+                  {modalBidDocs.length > 0 && (
+                    <div className="docs-flex-list" style={{ marginBottom: 12 }}>
+                      {modalBidDocs.map((doc) => (
+                        <div key={doc.id} className="doc-item-pill">
+                          <div className="doc-info font-bold">
+                            <span>{doc.originalFilename}</span>
+                            <small>{doc.documentType}</small>
+                          </div>
+                          <button onClick={() => handleDownloadDoc(doc)} className="btn-download-doc" title={t("vendor.downloadFileTitle")}>
+                            <Download size={13} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <form onSubmit={(e) => handleUploadDocument(e, modalBid.id)} className="upload-form-expanded" style={{ marginBottom: 12 }}>
+                    <div className="form-row">
+                      <label>{t("vendor.docCategoryLabel")}</label>
+                      <select value={docCategory} onChange={(e) => setDocCategory(e.target.value)}>
+                        <option value="Technical Proposal">{t("vendor.docTypeTechnical")}</option>
+                        <option value="ISO 9001 Certificate">{t("vendor.docTypeIso")}</option>
+                        <option value="OEM Warranty Letter">{t("vendor.docTypeWarranty")}</option>
+                        <option value="Past Contract Experience">{t("vendor.docTypeExperience")}</option>
+                        <option value="Commercial Bid Financial Quote">{t("vendor.docTypeCommercial")}</option>
+                      </select>
+                    </div>
+                    <div className="form-row">
+                      <label>{t("vendor.selectFileLabel")}</label>
+                      <input type="file" required onChange={(e) => setFileToUpload(e.target.files[0])} />
+                    </div>
+                    <div className="form-btn-group">
+                      <button type="submit" disabled={isUploading} className="btn-upload-submit">
+                        {isUploading ? t("vendor.uploading") : t("vendor.uploadDocument")}
+                      </button>
+                    </div>
+                  </form>
+                  <div className="upload-form-expanded">
+                    <div className="form-row">
+                      <label>{t("vendor.gemImportTitle")}</label>
+                      <p className="subtext" style={{ margin: "0 0 8px" }}>{t("vendor.gemImportDesc")}</p>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          placeholder={t("vendor.gemBidIdPlaceholder")}
+                          value={gemBidId}
+                          onChange={(e) => setGemBidId(e.target.value)}
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          disabled={isImporting}
+                          className="btn-upload-submit"
+                          onClick={() => handleImportGem(modalBid.id)}
+                        >
+                          {isImporting ? t("vendor.gemImporting") : t("vendor.gemImportBtn")}
+                        </button>
+                      </div>
+                      <div className="field-hint" style={{ marginTop: 6 }}>{t("vendor.gemDemoHint")}</div>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 

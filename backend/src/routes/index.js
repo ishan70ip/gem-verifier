@@ -9,7 +9,8 @@ import { analyzeEvaluation } from "../services/analyze.js";
 import { extractTextFromFile } from "../services/extract.js";
 import { geminiMode } from "../services/gemini.js";
 import { verifyVendorOnPortals } from "../services/mockPortals.js";
-import { saveUpload, readFile } from "../services/storage.js";
+import { saveUpload, saveBuffer, readFile } from "../services/storage.js";
+import { lookupGemBid, makePdf, GEM_BID_IDS } from "../services/dummyDocs.js";
 import {
   AuditLog,
   Award,
@@ -439,6 +440,40 @@ router.get("/vendor/bids/:id/documents", ...vendor, asyncRoute(async (req, res) 
   const vendorDoc = await Vendor.findOne({ userId: req.user.id });
   if (!await Bid.exists({ _id: req.params.id, vendorId: vendorDoc._id })) return res.status(404).json({ detail: "Bid not found" });
   res.json((await Document.find({ bidId: req.params.id, vendorId: vendorDoc._id }).lean()).map(clean));
+}));
+// Import documents from a GeM seller bid (mock GeM portal lookup - the real
+// GeM portal exposes no public API, so this registry stands in for an
+// authorized connector; production swaps lookupGemBid only).
+router.get("/vendor/gem-bids/demo-ids", ...vendor, asyncRoute(async (_req, res) => res.json({ demo_ids: GEM_BID_IDS })));
+router.post("/vendor/bids/:id/import-gem", ...vendor, asyncRoute(async (req, res) => {
+  const vendorDoc = await Vendor.findOne({ userId: req.user.id });
+  const bid = await Bid.findOne({ _id: req.params.id, vendorId: vendorDoc._id });
+  if (!bid) return res.status(404).json({ detail: "Bid not found" });
+  const gemBid = lookupGemBid(req.body.gem_bid_id);
+  if (!gemBid) return res.status(404).json({ detail: `Unknown GeM seller bid "${req.body.gem_bid_id || ""}". Try a demo ID: ${GEM_BID_IDS.join(", ")}` });
+  const created = [];
+  for (const item of gemBid.docs) {
+    const filename = item.name;
+    if (await Document.findOne({ bidId: bid._id, originalFilename: filename }).lean()) continue;
+    const stored = await saveBuffer(filename, makePdf(item.lines), "application/pdf");
+    const document = await Document.create({
+      bidId: bid._id,
+      tenderId: bid.tenderId,
+      vendorId: vendorDoc._id,
+      documentType: item.type,
+      originalFilename: filename,
+      storagePath: stored.storagePath,
+      mimeType: "application/pdf",
+      fileSize: stored.fileSize,
+      uploadedBy: req.user.id,
+      visibility: "vendor_and_officer",
+      status: "ACTIVE",
+      uploadedAt: new Date(),
+    });
+    created.push(clean(document.toObject()));
+  }
+  await audit(req.user, "document.imported_from_gem", "bid", bid._id, { gem_bid_id: req.body.gem_bid_id, imported: created.length });
+  res.status(201).json({ imported: created, gem_bid: req.body.gem_bid_id, skipped_duplicates: gemBid.docs.length - created.length });
 }));
 router.get("/documents/:id/download", auth, asyncRoute(async (req, res) => {
   const document = await Document.findById(req.params.id).lean();
