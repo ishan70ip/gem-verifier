@@ -5624,14 +5624,15 @@ body {
 
 .matrix-result {
   width: 100%;
-  min-height: 46px;
+  min-height: 52px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 6px;
+  gap: 8px;
+  padding: 7px 9px;
   border: 1px solid transparent;
-  border-radius: 5px;
-  background: transparent;
+  border-left-width: 4px;
+  border-radius: 7px;
+  background: #f1f5f9;
   text-align: left;
   font: inherit;
   cursor: pointer;
@@ -5647,15 +5648,25 @@ body {
 }
 
 .matrix-result.compliant {
-  color: #31815d;
+  color: #146c43;
+  background: #e3f3ea;
+  border-color: #bfe3cf;
+  border-left-color: #1a9e5c;
 }
 
 .matrix-result.non-compliant {
-  color: #c4514d;
+  color: #b02a26;
+  background: #fdeceb;
+  border-color: #f5c6c3;
+  border-left-color: #d63b36;
 }
 
 .matrix-result.needs-review {
-  color: #b57731;
+  color: #925e12;
+  background: #fdf3df;
+  border-color: #f0d9a8;
+  border-left-color: #dd9317;
+  border-left-style: solid;
 }
 
 .matrix-result span {
@@ -5676,9 +5687,16 @@ body {
 }
 
 .matrix-result small {
-  color: #708493;
+  color: inherit;
   font-size: 8px;
-  margin-top: 2px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 3px;
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.65);
 }
 
 .matrix-result em {
