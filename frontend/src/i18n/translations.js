@@ -153,6 +153,13 @@ export const translations = {
     "vendor.gemLoadingIds": "Loading available GeM bids…",
     "vendor.gemNoIds": "No GeM bids available.",
     "vendor.gemDocsUnit": "docs",
+    "vendor.officerDecision": "Officer decision",
+    "vendor.compliantCount": "compliant",
+    "vendor.fbCompliant": "Compliant",
+    "vendor.fbNonCompliant": "Non-compliant",
+    "vendor.fbReview": "Under review",
+    "vendor.officerReason": "Officer reason:",
+    "vendor.noReasonYet": "Decision recorded — detailed reason awaited.",
     "vendor.submitFirstHint": "Submit a bid first — document upload and GeM import unlock here after submission.",
 
     // ---- Tenders list ----
@@ -333,6 +340,9 @@ export const translations = {
     "drawer.noSourceTitle": "No source document was recorded for this evidence",
     "drawer.viewSource": "View source document",
     "drawer.sourceUnavailable": "Source document unavailable",
+    "drawer.reasonPlaceholder": "Reason for this decision (shared with the vendor)…",
+    "drawer.reasonSharedNote": "This reason will be visible to the vendor after the evaluation is final.",
+    "drawer.officerReason": "Officer reason",
 
     // ---- Document preview ----
     "preview.loadError": "Could not load this document.",
@@ -666,6 +676,13 @@ export const translations = {
     "vendor.gemLoadingIds": "उपलब्ध GeM बोलियां लोड हो रही हैं…",
     "vendor.gemNoIds": "कोई GeM बोली उपलब्ध नहीं।",
     "vendor.gemDocsUnit": "दस्तावेज़",
+    "vendor.officerDecision": "अधिकारी निर्णय",
+    "vendor.compliantCount": "अनुपालित",
+    "vendor.fbCompliant": "अनुपालित",
+    "vendor.fbNonCompliant": "गैर-अनुपालित",
+    "vendor.fbReview": "समीक्षाधीन",
+    "vendor.officerReason": "अधिकारी कारण:",
+    "vendor.noReasonYet": "निर्णय दर्ज — विस्तृत कारण प्रतीक्षित।",
     "vendor.submitFirstHint": "पहले बोली जमा करें — जमा के बाद यहां दस्तावेज़ अपलोड और GeM आयात खुलेगा।",
 
     // ---- Tenders list ----
@@ -846,6 +863,9 @@ export const translations = {
     "drawer.noSourceTitle": "इस साक्ष्य हेतु कोई स्रोत दस्तावेज़ दर्ज नहीं",
     "drawer.viewSource": "स्रोत दस्तावेज़ देखें",
     "drawer.sourceUnavailable": "स्रोत दस्तावेज़ उपलब्ध नहीं",
+    "drawer.reasonPlaceholder": "इस निर्णय का कारण (विक्रेता के साथ साझा होगा)…",
+    "drawer.reasonSharedNote": "मूल्यांकन अंतिम होने के बाद यह कारण विक्रेता को दिखेगा।",
+    "drawer.officerReason": "अधिकारी कारण",
 
     // ---- Document preview ----
     "preview.loadError": "यह दस्तावेज़ लोड नहीं हो सका।",
