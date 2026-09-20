@@ -174,6 +174,7 @@ export default function EvaluationPage() {
           requirement={selectedRequirement}
           vendor={selectedVendorData}
           documents={data.documents || []}
+          readOnly={data.evaluation.status === "CONTRACT_AWARDED" || data.evaluation.status === "AWARDED"}
           onClose={() => setSelectedResult(null)}
           onResolve={handleResolve}
           onViewSourceDocument={setPreviewDoc}
