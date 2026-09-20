@@ -188,6 +188,7 @@ router.get("/evaluations/:id/matrix", ...officer, asyncRoute(async (req, res) =>
   res.json((await evaluationPayload(evaluation)).results);
 }));
 router.get("/evaluations/:id/results", ...officer, asyncRoute(async (req, res) => res.json((await ComplianceResult.find({ evaluationId: req.params.id }).lean()).map(clean))));
+router.get("/evaluations/:id/awards", ...officer, asyncRoute(async (req, res) => res.json((await Award.find({ evaluationId: req.params.id }).lean()).map(clean))));
 router.post("/evaluations/:id/complete", ...officer, asyncRoute(async (req, res) => {
   const evaluation = await EvaluationModel.findById(req.params.id);
   if (!evaluation) return res.status(404).json({ detail: "Evaluation not found" });
