@@ -159,9 +159,11 @@ export function runComplianceForVendor({ vendor, bid, documents, docText, tender
   // 8: turnover
   if (thresholds.minTurnover != null) {
     const ok = fields.turnover != null && fields.turnover >= thresholds.minTurnover;
+    const mc = marginConf(fields.turnover, thresholds.minTurnover);
     push({
       key: "turnover", mandatory: true, weight: 10,
       status: fields.turnover == null ? "needs_review" : ok ? "compliant" : "non_compliant",
+      confidence: mc, confidenceLocked: mc != null,
       evidenceText: fields.turnover != null ? `Extracted turnover ₹${fields.turnover.toLocaleString("en-IN")} vs required ₹${thresholds.minTurnover.toLocaleString("en-IN")}` : "No turnover figure extracted from bid documents.",
       exactQuote: fields.turnover != null ? `Turnover ₹${fields.turnover.toLocaleString("en-IN")}` : null,
       explanation: fields.turnover == null ? "Turnover not found in documents; officer to verify audited financials." : ok ? "Meets minimum average annual turnover." : "Below minimum turnover threshold.",
@@ -171,8 +173,12 @@ export function runComplianceForVendor({ vendor, bid, documents, docText, tender
   // 9: experience
   if (thresholds.minExperience != null) {
     const ok = fields.experienceYears != null && fields.experienceYears >= thresholds.minExperience;
+    const mc = fields.experienceYears != null
+      ? marginConf(fields.experienceYears, thresholds.minExperience)
+      : fields.hasPastContracts ? 0.5 : null; // partial hint, still needs review
     push({
       key: "experience", mandatory: true, weight: 8,
+      confidence: mc, confidenceLocked: mc != null,
       status: fields.experienceYears == null && !fields.hasPastContracts ? "needs_review" : ok || (fields.experienceYears == null && fields.hasPastContracts) ? (fields.experienceYears == null ? "needs_review" : "compliant") : "non_compliant",
       evidenceText: fields.experienceYears != null ? `Extracted experience ${fields.experienceYears} yrs vs required ${thresholds.minExperience} yrs` : fields.hasPastContracts ? "Past-contract certificates mentioned but years not quantified." : "No experience evidence extracted.",
       exactQuote: fields.experienceYears != null ? `${fields.experienceYears} years experience` : null,
@@ -183,8 +189,10 @@ export function runComplianceForVendor({ vendor, bid, documents, docText, tender
   // 10: EMD
   if (thresholds.minEmd != null) {
     const ok = fields.emd != null && fields.emd >= thresholds.minEmd;
+    const mc = marginConf(fields.emd, thresholds.minEmd);
     push({
       key: "emd", mandatory: true, weight: 6,
+      confidence: mc, confidenceLocked: mc != null,
       status: fields.emd == null ? "needs_review" : ok ? "compliant" : "non_compliant",
       evidenceText: fields.emd != null ? `Extracted EMD ₹${fields.emd.toLocaleString("en-IN")} vs required ₹${thresholds.minEmd.toLocaleString("en-IN")}` : "No EMD amount extracted from bid documents.",
       exactQuote: fields.emd != null ? `EMD ₹${fields.emd.toLocaleString("en-IN")}` : null,
@@ -218,8 +226,10 @@ export function runComplianceForVendor({ vendor, bid, documents, docText, tender
   // 13: Make in India / local content
   if (thresholds.minLocalContent != null) {
     const ok = fields.localContentPct != null && fields.localContentPct >= thresholds.minLocalContent;
+    const mc = marginConf(fields.localContentPct, thresholds.minLocalContent);
     push({
       key: "make_in_india", mandatory: false, weight: 5,
+      confidence: mc, confidenceLocked: mc != null,
       status: fields.localContentPct == null ? "needs_review" : ok ? "compliant" : "non_compliant",
       evidenceText: fields.localContentPct != null ? `Declared local content ${fields.localContentPct}% vs required ${thresholds.minLocalContent}%` : "No local-content declaration extracted.",
       exactQuote: fields.localContentPct != null ? `${fields.localContentPct}% local content` : null,
@@ -230,8 +240,10 @@ export function runComplianceForVendor({ vendor, bid, documents, docText, tender
   // 14: warranty
   if (thresholds.minWarranty != null) {
     const ok = fields.warrantyYears != null && fields.warrantyYears >= thresholds.minWarranty;
+    const mc = marginConf(fields.warrantyYears, thresholds.minWarranty);
     push({
       key: "warranty", mandatory: false, weight: 4,
+      confidence: mc, confidenceLocked: mc != null,
       status: fields.warrantyYears == null ? "needs_review" : ok ? "compliant" : "non_compliant",
       evidenceText: fields.warrantyYears != null ? `Offered warranty ${fields.warrantyYears} yrs vs required ${thresholds.minWarranty} yrs` : "No warranty period extracted.",
       exactQuote: fields.warrantyYears != null ? `${fields.warrantyYears} years warranty` : null,
@@ -274,8 +286,21 @@ export function runComplianceForVendor({ vendor, bid, documents, docText, tender
 // Confidence reflects evidence quality, not a flat default:
 // portal-verified identities score highest; missing evidence scores lowest;
 // Gemini-adjudicated rows keep the model's own confidence.
+// Margin-sensitive confidence for numeric threshold checks: beating the
+// threshold by far scores higher than scraping past it exactly.
+function marginConf(actual, required) {
+  if (actual == null || required == null || required <= 0) return null;
+  const ratio = actual / required;
+  if (ratio >= 2) return 0.93;
+  if (ratio >= 1.2) return 0.88;
+  if (ratio >= 1) return 0.78;
+  if (ratio >= 0.8) return 0.7; // near miss: less certain it is a fail
+  return 0.85; // clear miss: confident fail
+}
+
 function withConfidence(check) {
   if (check.determinationSource === "ai-gemini-adjudicated" && typeof check.confidence === "number") return check;
+  if (check.confidenceLocked) return check; // margin-computed at the check site
   if (check.key.startsWith("req:")) {
     // Generic keyword matches are inherently low-confidence signals.
     check.confidence = check.status === "compliant" ? 0.6 : 0.35;
