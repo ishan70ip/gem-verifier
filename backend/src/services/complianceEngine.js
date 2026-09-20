@@ -268,7 +268,28 @@ export function runComplianceForVendor({ vendor, bid, documents, docText, tender
     });
   }
 
-  return { fields, portal, checks, ...scoreVerdict(checks, vendor) };
+  return { fields, portal, checks: checks.map(withConfidence), ...scoreVerdict(checks.map(withConfidence), vendor) };
+}
+
+// Confidence reflects evidence quality, not a flat default:
+// portal-verified identities score highest; missing evidence scores lowest;
+// Gemini-adjudicated rows keep the model's own confidence.
+function withConfidence(check) {
+  if (check.determinationSource === "ai-gemini-adjudicated" && typeof check.confidence === "number") return check;
+  if (check.key.startsWith("req:")) {
+    // Generic keyword matches are inherently low-confidence signals.
+    check.confidence = check.status === "compliant" ? 0.6 : 0.35;
+    return check;
+  }
+  const hasEvidence = Boolean(check.exactQuote);
+  if (check.status === "compliant") {
+    check.confidence = ["udyam", "gst", "pan_itr", "debarment"].includes(check.key) ? 0.95 : hasEvidence ? 0.85 : 0.7;
+  } else if (check.status === "non_compliant") {
+    check.confidence = ["udyam", "gst", "pan_itr", "debarment"].includes(check.key) ? 0.92 : hasEvidence ? 0.85 : 0.7;
+  } else {
+    check.confidence = hasEvidence ? 0.6 : 0.35;
+  }
+  return check;
 }
 
 // Recompute score / risk / recommendation from an (optionally AI-updated)
