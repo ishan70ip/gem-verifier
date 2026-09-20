@@ -231,7 +231,11 @@ export default function VendorDashboard() {
         [bidId]: [...(prev[bidId] || []), ...imported],
       }));
       setGemBidId("");
-      showNotification(t("vendor.gemImportSuccess").replace("{n}", imported.length), "success");
+      if (imported.length === 0) {
+        showNotification(t("vendor.gemAlreadyImported"), "success");
+      } else {
+        showNotification(t("vendor.gemImportSuccess").replace("{n}", imported.length), "success");
+      }
     } catch (err) {
       showNotification(err.message, "error");
     } finally {
