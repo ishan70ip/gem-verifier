@@ -98,6 +98,89 @@ export const GEM_BIDS = {
       },
     ],
   },
+  "GEM-BID-2026-103": {
+    seller: "General Bidder",
+    tenderRef: "GEM/2026/B/1002",
+    docs: [
+      {
+        type: "OEM Letter",
+        name: "gem-import-oem-letter.pdf",
+        lines: [
+          "MANUFACTURER AUTHORISATION FORM - Imported from GeM",
+          "Ref: MAF/PRN/2026/2207",
+          "We authorize the bidder to quote and support our printers.",
+          "OEM Authorization from printer manufacturer attached.",
+          "Back-to-back 3 years comprehensive on-site warranty assured.",
+        ],
+      },
+      {
+        type: "Warranty Certificate",
+        name: "gem-import-warranty-certificate.pdf",
+        lines: [
+          "WARRANTY CERTIFICATE - Imported from GeM",
+          "3 years comprehensive on-site warranty offered.",
+          "Local content 55 percent under Make in India.",
+        ],
+      },
+    ],
+  },
+  "GEM-BID-2026-104": {
+    seller: "General Bidder",
+    tenderRef: "GEM/2026/B/1002",
+    docs: [
+      {
+        type: "Financial Statement",
+        name: "gem-import-financial-statement.pdf",
+        lines: [
+          "AUDITED FINANCIAL SUMMARY - Imported from GeM",
+          "Average annual turnover of Rs 1.2 Crore for last 3 financial years.",
+          "Chartered Accountant certified. UDIN referenced.",
+        ],
+      },
+      {
+        type: "EMD Instrument",
+        name: "gem-import-emd-receipt.pdf",
+        lines: [
+          "EMD PAYMENT RECEIPT - Imported from GeM",
+          "EMD of Rs 200000 paid vide GeM portal gateway.",
+          "Transaction ID GEM-EMD-88231 dated 2026.",
+        ],
+      },
+      {
+        type: "Past Contract Experience",
+        name: "gem-import-experience-letter.pdf",
+        lines: [
+          "EXPERIENCE CERTIFICATE - Imported from GeM",
+          "6 years of experience in supply of IT hardware to government offices.",
+          "Three completed orders with satisfactory performance remarks.",
+        ],
+      },
+    ],
+  },
+  "GEM-BID-2026-105": {
+    seller: "General Bidder",
+    tenderRef: "GEM/2026/B/1002",
+    docs: [
+      {
+        type: "EPFO Compliance",
+        name: "gem-import-epfo-challan.pdf",
+        lines: [
+          "EPFO ECR CHALLAN - Imported from GeM",
+          "Establishment Code: MH-BAN-654321",
+          "Contributions deposited up to date. No defaults.",
+        ],
+      },
+      {
+        type: "PAN Card",
+        name: "gem-import-pan-card.pdf",
+        lines: [
+          "PERMANENT ACCOUNT NUMBER CARD - Imported from GeM",
+          "PAN: AALCB5678G",
+          "Name: Brightline Technologies LLP",
+        ],
+      },
+    ],
+  },
 };
 
 export const GEM_BID_IDS = Object.keys(GEM_BIDS);
