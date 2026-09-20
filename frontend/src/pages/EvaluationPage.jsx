@@ -44,11 +44,19 @@ export default function EvaluationPage() {
   const selectedRequirement = selectedResult && (data.requirements || []).find(requirement => requirement.id === selectedResult.requirementId);
   const selectedVendorData = selectedResult && (data.vendors || []).find(vendor => vendor.id === selectedResult.vendorId);
 
-  const handleResolve = (status, reviewComment) => {
-    if (!selectedResult || data.evaluation.status === "CONTRACT_AWARDED" || data.evaluation.status === "AWARDED") return;
-    resolveComplianceResult(selectedResult.id, status, reviewComment).catch(() => null);
-    setResolvedResults(current => ({ ...current, [`${selectedResult.vendorId}-${selectedResult.requirementId}`]: status }));
-    setSelectedResult(current => ({ ...current, status }));
+  const handleResolve = async (status, reviewComment) => {
+    if (!selectedResult) return;
+    if (data.evaluation.status === "CONTRACT_AWARDED" || data.evaluation.status === "AWARDED") {
+      setError(t("eval.readOnlyNote"));
+      return;
+    }
+    try {
+      await resolveComplianceResult(selectedResult.id, status, reviewComment);
+      setResolvedResults(current => ({ ...current, [`${selectedResult.vendorId}-${selectedResult.requirementId}`]: status }));
+      setSelectedResult(current => ({ ...current, status }));
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const handleComplete = () => {
