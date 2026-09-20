@@ -53,6 +53,9 @@ export default function VendorDashboard() {
   const [profileForm, setProfileForm] = useState({ legalName: "", phone: "", category: "MSME", gstin: "" });
   const [gemBidId, setGemBidId] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const [gemPanelOpen, setGemPanelOpen] = useState(false);
+  const [gemBids, setGemBids] = useState([]);
+  const [gemLoading, setGemLoading] = useState(false);
 
   const showNotification = (text, type = "success") => {
     setNotification({ text, type });
@@ -210,8 +213,9 @@ export default function VendorDashboard() {
     }
   };
 
-  const handleImportGem = async (bidId) => {
-    if (!gemBidId.trim()) {
+  const handleImportGem = async (bidId, gemId) => {
+    const chosen = (gemId || gemBidId || "").trim();
+    if (!chosen) {
       showNotification(t("vendor.gemIdRequired"), "error");
       return;
     }
@@ -219,7 +223,7 @@ export default function VendorDashboard() {
       setIsImporting(true);
       const res = await apiRequest(`/vendor/bids/${bidId}/import-gem`, {
         method: "POST",
-        body: JSON.stringify({ gem_bid_id: gemBidId.trim() }),
+        body: JSON.stringify({ gem_bid_id: chosen }),
       });
       const imported = res.imported || [];
       setDocumentsMap((prev) => ({
@@ -232,6 +236,22 @@ export default function VendorDashboard() {
       showNotification(err.message, "error");
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  const handleToggleGemPanel = async () => {
+    const next = !gemPanelOpen;
+    setGemPanelOpen(next);
+    if (next && gemBids.length === 0 && !gemLoading) {
+      try {
+        setGemLoading(true);
+        const res = await apiRequest("/vendor/gem-bids/demo-ids");
+        setGemBids(res.bids || (res.demo_ids || []).map((id) => ({ id })));
+      } catch {
+        setGemBids([]);
+      } finally {
+        setGemLoading(false);
+      }
     }
   };
 
@@ -670,22 +690,40 @@ export default function VendorDashboard() {
                     <div className="form-row">
                       <label>{t("vendor.gemImportTitle")}</label>
                       <p className="subtext" style={{ margin: "0 0 8px" }}>{t("vendor.gemImportDesc")}</p>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <input
-                          placeholder={t("vendor.gemBidIdPlaceholder")}
-                          value={gemBidId}
-                          onChange={(e) => setGemBidId(e.target.value)}
-                          style={{ flex: 1 }}
-                        />
-                        <button
-                          type="button"
-                          disabled={isImporting}
-                          className="btn-upload-submit"
-                          onClick={() => handleImportGem(modalBid.id)}
-                        >
-                          {isImporting ? t("vendor.gemImporting") : t("vendor.gemImportBtn")}
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        className="btn-trigger-upload"
+                        onClick={handleToggleGemPanel}
+                      >
+                        <Download size={14} /> {t("vendor.gemBrowseBtn")}
+                      </button>
+                      {gemPanelOpen && (
+                        <div style={{ marginTop: 10 }}>
+                          {gemLoading && <p className="subtext">{t("vendor.gemLoadingIds")}</p>}
+                          {!gemLoading && gemBids.length === 0 && (
+                            <p className="subtext">{t("vendor.gemNoIds")}</p>
+                          )}
+                          {!gemLoading && gemBids.map((bundle) => (
+                            <div key={bundle.id} className="doc-item-pill" style={{ marginBottom: 8 }}>
+                              <div className="doc-info font-bold">
+                                <span className="mono">{bundle.id}</span>
+                                <small>
+                                  {bundle.seller || ""}
+                                  {bundle.docs ? ` · ${bundle.docs.length} ${t("vendor.gemDocsUnit")}` : ""}
+                                </small>
+                              </div>
+                              <button
+                                type="button"
+                                disabled={isImporting}
+                                className="btn-upload-submit"
+                                onClick={() => handleImportGem(modalBid.id, bundle.id)}
+                              >
+                                {isImporting ? t("vendor.gemImporting") : t("vendor.gemImportBtn")}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <div className="field-hint" style={{ marginTop: 6 }}>{t("vendor.gemDemoHint")}</div>
                     </div>
                   </div>

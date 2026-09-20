@@ -148,6 +148,10 @@ export const translations = {
     "vendor.gemIdRequired": "Enter a GeM seller bid ID first.",
     "vendor.gemImportSuccess": "Imported {n} document(s) from GeM!",
     "vendor.gemDemoHint": "Demo IDs: GEM-BID-2026-101 … 105 — proposal, certificates, OEM letter, financials, EMD receipt (GeM has no public API; this uses a mock portal lookup)",
+    "vendor.gemBrowseBtn": "Browse GeM bids",
+    "vendor.gemLoadingIds": "Loading available GeM bids…",
+    "vendor.gemNoIds": "No GeM bids available.",
+    "vendor.gemDocsUnit": "docs",
     "vendor.submitFirstHint": "Submit a bid first — document upload and GeM import unlock here after submission.",
 
     // ---- Tenders list ----
@@ -656,6 +660,10 @@ export const translations = {
     "vendor.gemIdRequired": "पहले GeM विक्रेता बोली ID डालें।",
     "vendor.gemImportSuccess": "{n} दस्तावेज़ GeM से आयात हुए!",
     "vendor.gemDemoHint": "डेमो ID: GEM-BID-2026-101 … 105 — प्रस्ताव, प्रमाणपत्र, OEM पत्र, वित्तीय विवरण, EMD रसीद (GeM का सार्वजनिक API नहीं; मॉक पोर्टल लुकअप)",
+    "vendor.gemBrowseBtn": "GeM बोलियां देखें",
+    "vendor.gemLoadingIds": "उपलब्ध GeM बोलियां लोड हो रही हैं…",
+    "vendor.gemNoIds": "कोई GeM बोली उपलब्ध नहीं।",
+    "vendor.gemDocsUnit": "दस्तावेज़",
     "vendor.submitFirstHint": "पहले बोली जमा करें — जमा के बाद यहां दस्तावेज़ अपलोड और GeM आयात खुलेगा।",
 
     // ---- Tenders list ----

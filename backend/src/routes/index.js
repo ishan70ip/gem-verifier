@@ -444,7 +444,13 @@ router.get("/vendor/bids/:id/documents", ...vendor, asyncRoute(async (req, res) 
 // Import documents from a GeM seller bid (mock GeM portal lookup - the real
 // GeM portal exposes no public API, so this registry stands in for an
 // authorized connector; production swaps lookupGemBid only).
-router.get("/vendor/gem-bids/demo-ids", ...vendor, asyncRoute(async (_req, res) => res.json({ demo_ids: GEM_BID_IDS })));
+router.get("/vendor/gem-bids/demo-ids", ...vendor, asyncRoute(async (_req, res) => res.json({
+  demo_ids: GEM_BID_IDS,
+  bids: GEM_BID_IDS.map((id) => {
+    const bundle = lookupGemBid(id);
+    return { id, seller: bundle.seller, tenderRef: bundle.tenderRef, docs: bundle.docs.map((d) => ({ name: d.name, type: d.type })) };
+  }),
+})));
 router.post("/vendor/bids/:id/import-gem", ...vendor, asyncRoute(async (req, res) => {
   const vendorDoc = await Vendor.findOne({ userId: req.user.id });
   const bid = await Bid.findOne({ _id: req.params.id, vendorId: vendorDoc._id });
