@@ -280,8 +280,21 @@ export function runComplianceForVendor({ vendor, bid, documents, docText, tender
     });
   }
 
-  return { fields, portal, checks: checks.map(withConfidence), ...scoreVerdict(checks.map(withConfidence), vendor) };
+  return { fields, portal, checks: checks.map((c) => withConfidence(c, docText)), ...scoreVerdict(checks.map((c) => withConfidence(c, docText)), vendor) };
 }
+
+// Hint vocabulary per check: related terms that, without forming usable
+// evidence, still show the topic was discussed (vs never mentioned at all).
+const HINT_WORDS = {
+  turnover: ["turnover", "revenue", "crore", "lakh", "financial", "audited", "balance"],
+  experience: ["experience", "years", "past", "order", "executed", "projects", "work"],
+  emd: ["emd", "earnest", "deposit", "money", "demand draft", "bank guarantee", "dd no"],
+  iso: ["iso", "9001", "quality", "certificate", "certified"],
+  oem: ["oem", "authori", "maf", "manufacturer"],
+  make_in_india: ["local content", "indigenous", "make in india", "class"],
+  warranty: ["warranty", "guarantee", "amc", "support", "service"],
+  epfo_esic: ["epfo", "esic", "provident", "employee", "esi"],
+};
 
 // Confidence reflects evidence quality, not a flat default:
 // portal-verified identities score highest; missing evidence scores lowest;
@@ -298,12 +311,12 @@ function marginConf(actual, required) {
   return 0.85; // clear miss: confident fail
 }
 
-function withConfidence(check) {
+function withConfidence(check, docText = "") {
   if (check.determinationSource === "ai-gemini-adjudicated" && typeof check.confidence === "number") return check;
   if (check.confidenceLocked) return check; // margin-computed at the check site
   if (check.key.startsWith("req:")) {
     // Generic keyword matches are inherently low-confidence signals.
-    check.confidence = check.status === "compliant" ? 0.6 : 0.35;
+    check.confidence = check.status === "compliant" ? 0.6 : hintScore(check, docText);
     return check;
   }
   const hasEvidence = Boolean(check.exactQuote);
@@ -312,9 +325,21 @@ function withConfidence(check) {
   } else if (check.status === "non_compliant") {
     check.confidence = ["udyam", "gst", "pan_itr", "debarment"].includes(check.key) ? 0.92 : hasEvidence ? 0.85 : 0.7;
   } else {
-    check.confidence = hasEvidence ? 0.6 : 0.35;
+    check.confidence = hasEvidence ? 0.6 : hintScore(check, docText);
   }
   return check;
+}
+
+// Absence-of-evidence is not uniform: a document that never mentions the
+// topic scores lower than one that dances around it without usable figures.
+export function hintScore(check, docText) {
+  const words = HINT_WORDS[check.key];
+  if (!words || !docText) return 0.35;
+  const hay = docText.toLowerCase();
+  const hits = words.filter((w) => hay.includes(w)).length;
+  if (hits === 0) return 0.32;
+  if (hits <= 2) return 0.36;
+  return 0.42;
 }
 
 // Recompute score / risk / recommendation from an (optionally AI-updated)
