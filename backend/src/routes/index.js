@@ -210,7 +210,7 @@ router.patch("/compliance/:id", ...officer, asyncRoute(async (req, res) => {
   if (["AWARDED", "LOCKED"].includes(evaluation?.status)) return res.status(409).json({ detail: "Awarded evaluations are read-only" });
   Object.assign(result, { status, determinationSource: "human", humanReviewed: true, reviewedBy: req.user.id, reviewedAt: new Date(), reviewComment: req.body.review_comment });
   await result.save();
-  await audit(req.user, "compliance_result.updated", "compliance_result", result._id, { status, review_comment: req.body.review_comment || null });
+  await audit(req.user, "compliance_result.updated", "compliance_result", result._id, { status });
   res.json(clean(result.toObject()));
 }));
 
@@ -440,35 +440,6 @@ router.get("/vendor/bids/:id/documents", ...vendor, asyncRoute(async (req, res) 
   const vendorDoc = await Vendor.findOne({ userId: req.user.id });
   if (!await Bid.exists({ _id: req.params.id, vendorId: vendorDoc._id })) return res.status(404).json({ detail: "Bid not found" });
   res.json((await Document.find({ bidId: req.params.id, vendorId: vendorDoc._id }).lean()).map(clean));
-}));
-// Officer feedback for a vendor's own bid: requirement-level decisions with
-// the officer's stated reasons. Visible only after the evaluation is final
-// (COMPLETED / AWARDED) - never mid-review.
-router.get("/vendor/bids/:id/feedback", ...vendor, asyncRoute(async (req, res) => {
-  const vendorDoc = await Vendor.findOne({ userId: req.user.id });
-  const bid = await Bid.findOne({ _id: req.params.id, vendorId: vendorDoc._id }).lean();
-  if (!bid) return res.status(404).json({ detail: "Bid not found" });
-  const evaluation = await EvaluationModel.findOne({ tenderId: bid.tenderId }).lean();
-  if (!evaluation || !["COMPLETED", "EVALUATION_COMPLETED", "AWARDED"].includes(evaluation.status)) {
-    return res.json({ available: false, items: [] });
-  }
-  const [requirements, results] = await Promise.all([
-    Requirement.find({ tenderId: bid.tenderId }).sort({ requirementOrder: 1 }).lean(),
-    ComplianceResult.find({ bidId: bid._id, vendorId: vendorDoc._id }).lean(),
-  ]);
-  const titleOf = Object.fromEntries(requirements.map((r) => [r._id, r.title]));
-  res.json({
-    available: true,
-    evaluation_status: evaluation.status,
-    items: results.map((r) => ({
-      id: r._id,
-      requirement: titleOf[r.requirementId] || "Requirement",
-      status: r.status,
-      officer_reason: r.reviewComment || null,
-      explanation: r.explanation || null,
-      reviewed_at: r.reviewedAt || null,
-    })),
-  });
 }));
 // Import documents from a GeM seller bid (mock GeM portal lookup - the real
 // GeM portal exposes no public API, so this registry stands in for an

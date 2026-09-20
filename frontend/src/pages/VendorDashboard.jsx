@@ -34,7 +34,6 @@ export default function VendorDashboard() {
   const [bids, setBids] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [documentsMap, setDocumentsMap] = useState({}); // bidId -> docs[]
-  const [feedbackMap, setFeedbackMap] = useState({}); // bidId -> { available, items[] }
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("tenders"); // tenders | bids | contracts | profile
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,19 +90,13 @@ export default function VendorDashboard() {
       if (bidsData.status === "fulfilled") {
         const bidList = bidsData.value || [];
         setBids(bidList);
-        // Fetch documents + officer feedback for each bid
+        // Fetch documents for each bid
         bidList.forEach(async (bid) => {
           try {
             const docs = await apiRequest(`/vendor/bids/${bid.id}/documents`);
             setDocumentsMap((prev) => ({ ...prev, [bid.id]: docs || [] }));
           } catch {
             // ignore doc fetch error if empty
-          }
-          try {
-            const fb = await apiRequest(`/vendor/bids/${bid.id}/feedback`);
-            setFeedbackMap((prev) => ({ ...prev, [bid.id]: fb || { available: false, items: [] } }));
-          } catch {
-            // feedback unavailable yet
           }
         });
       }
@@ -523,35 +516,6 @@ export default function VendorDashboard() {
                               </div>
                             )}
                           </div>
-
-                          {/* Officer decision feedback (visible after evaluation is final) */}
-                          {(() => {
-                            const fb = feedbackMap[bid.id];
-                            if (!fb || !fb.available) return null;
-                            const okCount = fb.items.filter((i) => i.status === "compliant").length;
-                            return (
-                              <div className="bid-docs-section">
-                                <h5>
-                                  <ShieldCheck size={16} /> {t("vendor.officerDecision")} ({okCount}/{fb.items.length} {t("vendor.compliantCount")})
-                                </h5>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                  {fb.items.map((item) => (
-                                    <div key={item.id} className="req-item-box">
-                                      <div className="req-header">
-                                        <strong>{item.requirement}</strong>
-                                        <span className="req-cat-badge">{item.status === "compliant" ? t("vendor.fbCompliant") : item.status === "non_compliant" ? t("vendor.fbNonCompliant") : t("vendor.fbReview")}</span>
-                                      </div>
-                                      {item.officer_reason ? (
-                                        <p><b>{t("vendor.officerReason")}</b> {item.officer_reason}</p>
-                                      ) : (
-                                        <p className="no-docs-text">{t("vendor.noReasonYet")}</p>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          })()}
 
                           {/* Inline File Upload Form */}
                           <div className="bid-upload-area">
