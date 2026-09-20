@@ -621,6 +621,10 @@ export default function VendorDashboard() {
                 <p className="no-reqs-text">{t("vendor.noReqsText")}</p>
               )}
 
+              {!modalBid && (
+                <p className="field-hint" style={{ marginTop: 12 }}>{t("vendor.submitFirstHint")}</p>
+              )}
+
               {modalBid && (
                 <div className="bid-docs-section" style={{ marginTop: 16 }}>
                   <h5>
