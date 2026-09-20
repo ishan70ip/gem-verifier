@@ -232,8 +232,14 @@ router.post("/awards", ...officer, asyncRoute(async (req, res) => {
   const { tender_id, evaluation_id, vendor_id } = req.body;
   const evaluation = await EvaluationModel.findOne({ _id: evaluation_id, tenderId: tender_id });
   const results = await ComplianceResult.find({ evaluationId: evaluation_id, vendorId: vendor_id });
-  if (!evaluation || !["COMPLETED", "EVALUATION_COMPLETED"].includes(evaluation.status)) return res.status(409).json({ detail: "Evaluation must be complete before award" });
-  if (!results.length || results.some(r => r.status !== "compliant")) return res.status(409).json({ detail: "Selected vendor is not eligible" });
+  if (!evaluation || !["COMPLETED", "EVALUATION_COMPLETED", "AWARDED"].includes(evaluation.status)) return res.status(409).json({ detail: "Evaluation must be complete before approval" });
+  // Officer discretion: any bidding vendor with results may be approved
+  // (including conditional ones); the decision + reason is the officer's
+  // responsibility and is audit-logged. Repeat calls approve more vendors.
+  if (!results.length) return res.status(409).json({ detail: "Selected vendor has no evaluation results" });
+  if (await Award.exists({ tenderId: tender_id, vendorId: vendor_id })) {
+    return res.status(409).json({ detail: "Vendor already approved for this tender" });
+  }
   const award = await Award.create({ tenderId: tender_id, evaluationId: evaluation_id, vendorId: vendor_id, status: "ACTIVE", awardedAt: new Date(), awardedBy: req.user.id, contractReference: `CON-${Date.now()}` });
   await Tender.findByIdAndUpdate(tender_id, { status: "AWARDED", awardedVendorId: vendor_id });
   await EvaluationModel.findByIdAndUpdate(evaluation_id, { status: "AWARDED" });
