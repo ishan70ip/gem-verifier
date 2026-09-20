@@ -18,6 +18,7 @@ import {
   ComplianceResult,
   Document,
   Evaluation as EvaluationModel,
+  Rejection,
   Requirement,
   Tender,
   User,
@@ -189,6 +190,45 @@ router.get("/evaluations/:id/matrix", ...officer, asyncRoute(async (req, res) =>
 }));
 router.get("/evaluations/:id/results", ...officer, asyncRoute(async (req, res) => res.json((await ComplianceResult.find({ evaluationId: req.params.id }).lean()).map(clean))));
 router.get("/evaluations/:id/awards", ...officer, asyncRoute(async (req, res) => res.json((await Award.find({ evaluationId: req.params.id }).lean()).map(clean))));
+// Explicit rejections: officer rejects a vendor with a stated reason.
+// Rejected vendors appear in the vendor's Rejected tab with that reason.
+router.get("/evaluations/:id/rejections", ...officer, asyncRoute(async (req, res) => res.json((await Rejection.find({ evaluationId: req.params.id }).lean()).map(clean))));
+router.post("/evaluations/:id/rejections", ...officer, asyncRoute(async (req, res) => {
+  const { vendor_id, reason } = req.body;
+  const evaluation = await EvaluationModel.findById(req.params.id).lean();
+  if (!evaluation) return res.status(404).json({ detail: "Evaluation not found" });
+  if (!await Bid.exists({ tenderId: evaluation.tenderId, vendorId: vendor_id })) {
+    return res.status(400).json({ detail: "Vendor has no bid in this tender" });
+  }
+  if (await Award.exists({ evaluationId: evaluation._id, vendorId: vendor_id })) {
+    return res.status(409).json({ detail: "Vendor already approved - remove the approval first" });
+  }
+  const existing = await Rejection.findOne({ evaluationId: evaluation._id, vendorId: vendor_id });
+  if (existing) {
+    Object.assign(existing, { reason: reason || "", decidedBy: req.user.id, decidedAt: new Date().toISOString() });
+    await existing.save();
+    await audit(req.user, "rejection.updated", "rejection", existing._id || existing.id, { vendor_id });
+    return res.json(clean(existing.toObject ? existing.toObject() : existing));
+  }
+  const rejection = await Rejection.create({
+    tenderId: evaluation.tenderId,
+    evaluationId: evaluation._id,
+    vendorId: vendor_id,
+    reason: reason || "",
+    status: "REJECTED",
+    decidedBy: req.user.id,
+    decidedAt: new Date().toISOString(),
+  });
+  await audit(req.user, "vendor.rejected", "rejection", rejection._id || rejection.id, { vendor_id });
+  res.status(201).json(clean(rejection.toObject ? rejection.toObject() : rejection));
+}));
+router.delete("/rejections/:id", ...officer, asyncRoute(async (req, res) => {
+  const rejection = await Rejection.findById(req.params.id);
+  if (!rejection) return res.status(404).json({ detail: "Rejection not found" });
+  await Rejection.deleteMany({ _id: rejection._id || rejection.id });
+  await audit(req.user, "rejection.removed", "rejection", rejection._id || rejection.id, {});
+  res.status(204).end();
+}));
 router.post("/evaluations/:id/complete", ...officer, asyncRoute(async (req, res) => {
   const evaluation = await EvaluationModel.findById(req.params.id);
   if (!evaluation) return res.status(404).json({ detail: "Evaluation not found" });
@@ -548,6 +588,18 @@ router.get("/vendor/contracts/:id/documents", ...vendor, asyncRoute(async (req, 
   const award = await Award.findOne({ _id: req.params.id, vendorId: vendorDoc._id });
   if (!award) return res.status(404).json({ detail: "Contract award not found" });
   res.json((await Document.find({ contractAwardId: award._id }).lean()).map(clean));
+}));
+// Vendor's own rejections with officer-stated reasons.
+router.get("/vendor/rejections", ...vendor, asyncRoute(async (req, res) => {
+  const vendorDoc = await Vendor.findOne({ userId: req.user.id });
+  const rejections = await Rejection.find({ vendorId: vendorDoc._id }).lean();
+  const tenders = await Tender.find({ _id: { $in: rejections.map(r => r.tenderId) } }).lean();
+  const tenderById = Object.fromEntries(tenders.map(t => [t._id, t]));
+  res.json(rejections.map(r => ({
+    ...clean(r),
+    tenderReference: tenderById[r.tenderId]?.referenceNumber || null,
+    tenderTitle: tenderById[r.tenderId]?.title || null,
+  })));
 }));
 
 export default router;

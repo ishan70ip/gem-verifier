@@ -8,6 +8,9 @@ export const createEvaluation = tenderId => apiRequest("/evaluations", { method:
 export const runAiAnalysis = evaluationId => apiRequest(`/ai/evaluations/${evaluationId}/analyze`, { method: "POST" });
 export const getAiStatus = evaluationId => apiRequest(`/ai/evaluations/${evaluationId}/status`);
 export const getEvaluationAwards = evaluationId => apiRequest(`/evaluations/${evaluationId}/awards`);
+export const getEvaluationRejections = evaluationId => apiRequest(`/evaluations/${evaluationId}/rejections`);
+export const submitRejection = (evaluationId, vendorId, reason) => apiRequest(`/evaluations/${evaluationId}/rejections`, { method: "POST", body: JSON.stringify({ vendor_id: vendorId, reason }) });
+export const removeRejection = rejectionId => apiRequest(`/rejections/${rejectionId}`, { method: "DELETE" });
 export const resolveComplianceResult = (resultId, status, reviewComment) => apiRequest(`/compliance/${resultId}`, {
   method: "PATCH",
   body: JSON.stringify({ status, review_comment: reviewComment }),

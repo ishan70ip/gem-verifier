@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import AppShell from "@/components/AppShell";
-import { getEvaluationById, getEvaluationAwards } from "@/services/evaluationService";
+import { getEvaluationById, getEvaluationAwards, getEvaluationRejections, submitRejection, removeRejection } from "@/services/evaluationService";
 import { assignContract } from "@/services/procurementService";
-import { CheckCircle2, ArrowLeft, ShieldCheck, Award } from "lucide-react";
+import { CheckCircle2, ArrowLeft, ShieldCheck, Award, XCircle } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
 // Officer approval: tick vendors to approve; each creates its own record.
@@ -15,15 +15,19 @@ export default function ContractAwardPage() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [awards, setAwards] = useState([]);
+  const [rejections, setRejections] = useState([]);
   const [selected, setSelected] = useState([]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [justApproved, setJustApproved] = useState([]);
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
     getEvaluationById(id).then(setData).catch(() => setData(null));
     getEvaluationAwards(id).then(setAwards).catch(() => setAwards([]));
+    getEvaluationRejections(id).then(setRejections).catch(() => setRejections([]));
   }, [id]);
 
   if (!data) {
@@ -32,7 +36,8 @@ export default function ContractAwardPage() {
 
   const vendors = data.vendors || [];
   const approvedIds = new Set(awards.map((a) => a.vendorId));
-  const pending = vendors.filter((v) => !approvedIds.has(v.id));
+  const rejectedByVendor = Object.fromEntries(rejections.map((r) => [r.vendorId, r]));
+  const pending = vendors.filter((v) => !approvedIds.has(v.id) && !rejectedByVendor[v.id]);
   const allDone = vendors.length > 0 && pending.length === 0;
 
   const toggle = (vendorId) =>
@@ -63,6 +68,36 @@ export default function ContractAwardPage() {
     } catch {
       setError(t("award.saveError"));
       setConfirming(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReject = async (vendorId) => {
+    setSaving(true);
+    setError("");
+    try {
+      await submitRejection(id, vendorId, rejectReason);
+      const refreshed = await getEvaluationRejections(id).catch(() => []);
+      setRejections(refreshed);
+      setRejectingId(null);
+      setRejectReason("");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUndoReject = async (rejectionId) => {
+    setSaving(true);
+    setError("");
+    try {
+      await removeRejection(rejectionId);
+      const refreshed = await getEvaluationRejections(id).catch(() => []);
+      setRejections(refreshed);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setSaving(false);
     }
@@ -131,24 +166,69 @@ export default function ContractAwardPage() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
                       {vendors.map((vendor) => {
                         const done = approvedIds.has(vendor.id);
+                        const rejection = rejectedByVendor[vendor.id];
                         return (
-                          <label key={vendor.id} className="req-item-box" style={{ display: "flex", gap: 10, alignItems: "center", cursor: done ? "default" : "pointer", opacity: done ? 0.65 : 1 }}>
-                            <input
-                              type="checkbox"
-                              checked={done || selected.includes(vendor.id)}
-                              disabled={done}
-                              onChange={() => toggle(vendor.id)}
-                            />
-                            <span style={{ flex: 1 }}>
-                              <b style={{ fontSize: 13.5 }}>{vendor.name}</b>
-                              <small style={{ display: "block", color: "var(--text-secondary)" }}>
-                                {vendor.compliancePercentage ?? "—"}% · {vendor.eligibility?.replace("_", " ")}
-                              </small>
-                            </span>
-                            {done
-                              ? <span className="chip">{t("award.alreadyApproved")}</span>
-                              : <span className="chip">{vendor.riskLevel || ""}</span>}
-                          </label>
+                          <div key={vendor.id}>
+                            <label className="req-item-box" style={{ display: "flex", gap: 10, alignItems: "center", cursor: done || rejection ? "default" : "pointer", opacity: done || rejection ? 0.65 : 1 }}>
+                              <input
+                                type="checkbox"
+                                checked={done || selected.includes(vendor.id)}
+                                disabled={done || Boolean(rejection)}
+                                onChange={() => toggle(vendor.id)}
+                              />
+                              <span style={{ flex: 1 }}>
+                                <b style={{ fontSize: 13.5 }}>{vendor.name}</b>
+                                <small style={{ display: "block", color: "var(--text-secondary)" }}>
+                                  {vendor.compliancePercentage ?? "—"}% · {vendor.eligibility?.replace("_", " ")}
+                                </small>
+                              </span>
+                              {done
+                                ? <span className="chip">{t("award.alreadyApproved")}</span>
+                                : rejection
+                                  ? <span className="chip">{t("award.rejectedChip")}</span>
+                                  : <span className="chip">{vendor.riskLevel || ""}</span>}
+                              {!done && !rejection && (
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost"
+                                  onClick={(e) => { e.preventDefault(); setRejectingId(vendor.id); setRejectReason(""); }}
+                                >
+                                  <XCircle size={13} /> {t("award.reject")}
+                                </button>
+                              )}
+                              {rejection && (
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost"
+                                  onClick={(e) => { e.preventDefault(); handleUndoReject(rejection.id); }}
+                                >
+                                  {t("award.undo")}
+                                </button>
+                              )}
+                            </label>
+                            {rejectingId === vendor.id && !rejection && (
+                              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                                <input
+                                  className="input-field"
+                                  style={{ flex: 1 }}
+                                  placeholder={t("award.rejectPlaceholder")}
+                                  value={rejectReason}
+                                  onChange={(e) => setRejectReason(e.target.value)}
+                                />
+                                <button type="button" className="btn btn-primary" disabled={saving} onClick={() => handleReject(vendor.id)}>
+                                  {t("award.confirmReject")}
+                                </button>
+                                <button type="button" className="btn btn-ghost" onClick={() => { setRejectingId(null); setRejectReason(""); }}>
+                                  {t("award.cancel")}
+                                </button>
+                              </div>
+                            )}
+                            {rejection?.reason && (
+                              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 6 }}>
+                                <b>{t("award.rejectionReason")}</b> {rejection.reason}
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>

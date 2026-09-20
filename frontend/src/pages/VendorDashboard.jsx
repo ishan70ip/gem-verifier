@@ -35,6 +35,7 @@ export default function VendorDashboard() {
   const [contracts, setContracts] = useState([]);
   const [documentsMap, setDocumentsMap] = useState({}); // bidId -> docs[]
   const [feedbackMap, setFeedbackMap] = useState({}); // bidId -> { available, items[] }
+  const [rejections, setRejections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("tenders"); // tenders | bids | contracts | profile
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,11 +71,12 @@ export default function VendorDashboard() {
   const loadAllVendorData = async () => {
     try {
       setLoading(true);
-      const [profData, tendData, bidsData, contData] = await Promise.allSettled([
+      const [profData, tendData, bidsData, contData, rejData] = await Promise.allSettled([
         apiRequest("/vendor/profile"),
         apiRequest("/vendor/tenders"),
         apiRequest("/vendor/bids"),
         apiRequest("/vendor/contracts"),
+        apiRequest("/vendor/rejections"),
       ]);
 
       if (profData.status === "fulfilled" && profData.value) {
@@ -109,6 +111,7 @@ export default function VendorDashboard() {
       }
 
       if (contData.status === "fulfilled") setContracts(contData.value || []);
+      if (rejData.status === "fulfilled") setRejections(rejData.value || []);
     } catch (err) {
       console.error("Failed loading vendor portal data", err);
     } finally {
@@ -382,6 +385,9 @@ export default function VendorDashboard() {
         <button className={activeTab === "contracts" ? "nav-tab-btn active" : "nav-tab-btn"} onClick={() => setActiveTab("contracts")}>
           <Award size={16} /> {t("vendor.awardedContracts")} ({contracts.length})
         </button>
+        <button className={activeTab === "rejected" ? "nav-tab-btn active" : "nav-tab-btn"} onClick={() => setActiveTab("rejected")}>
+          <X size={16} /> {t("vendor.rejectedBids")} ({rejections.length})
+        </button>
       </div>
 
       {/* Tab Contents */}
@@ -635,6 +641,41 @@ export default function VendorDashboard() {
                       <div className="contract-actions">
                         <span className="award-eligible-tag">
                           <CheckCircle2 size={15} /> {t("vendor.compliantAssigned")}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "rejected" && (
+            <div className="vendor-section-card">
+              <div className="section-toolbar">
+                <div>
+                  <h2>{t("vendor.rejectedTitle")}</h2>
+                  <p className="subtext">{t("vendor.rejectedSubtitle")}</p>
+                </div>
+              </div>
+
+              {rejections.length === 0 ? (
+                <div className="vendor-empty-state">{t("vendor.noRejections")}</div>
+              ) : (
+                <div className="contracts-grid">
+                  {rejections.map((rejection) => (
+                    <div key={rejection.id} className="vendor-contract-card">
+                      <div className="contract-card-header">
+                        <span className="contract-ref-badge">{rejection.tenderReference || t("vendor.tenderRefLabel")}</span>
+                        <span className="award-active-badge">{t("vendor.rejectedBadge")}</span>
+                      </div>
+                      <h3>{rejection.tenderTitle || t("vendor.rejectedBid")}</h3>
+                      <p className="award-date">
+                        {t("vendor.rejectedOn")} {rejection.decidedAt ? new Date(rejection.decidedAt).toLocaleDateString() : "—"}
+                      </p>
+                      <div className="contract-actions">
+                        <span className="award-eligible-tag">
+                          <X size={15} /> {rejection.reason || t("vendor.noReasonYet")}
                         </span>
                       </div>
                     </div>
