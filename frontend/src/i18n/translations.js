@@ -140,6 +140,14 @@ export const translations = {
     "vendor.categoryEnterprise": "Enterprise Bidder",
     "vendor.gstinNumberLabel": "GSTIN Number",
     "vendor.saveChanges": "Save Changes",
+    "vendor.gemImportTitle": "Import documents from GeM",
+    "vendor.gemImportDesc": "Already uploaded these on the GeM portal? Enter your GeM seller bid ID to pull them in — no re-upload needed.",
+    "vendor.gemBidIdPlaceholder": "e.g. GEM-BID-2026-101",
+    "vendor.gemImportBtn": "Import from GeM",
+    "vendor.gemImporting": "Importing...",
+    "vendor.gemIdRequired": "Enter a GeM seller bid ID first.",
+    "vendor.gemImportSuccess": "Imported {n} document(s) from GeM!",
+    "vendor.gemDemoHint": "Demo IDs: GEM-BID-2026-101, GEM-BID-2026-102 (GeM has no public API; this uses a mock portal lookup)",
 
     // ---- Tenders list ----
     "tenders.notProcessed": "Not processed",
@@ -639,6 +647,14 @@ export const translations = {
     "vendor.categoryEnterprise": "एंटरप्राइज़ बोलीदाता",
     "vendor.gstinNumberLabel": "GSTIN संख्या",
     "vendor.saveChanges": "परिवर्तन सहेजें",
+    "vendor.gemImportTitle": "GeM से दस्तावेज़ आयात करें",
+    "vendor.gemImportDesc": "क्या ये GeM पोर्टल पर पहले से अपलोड हैं? अपना GeM विक्रेता बोली ID डालें — पुनः अपलोड की ज़रूरत नहीं।",
+    "vendor.gemBidIdPlaceholder": "जैसे GEM-BID-2026-101",
+    "vendor.gemImportBtn": "GeM से आयात करें",
+    "vendor.gemImporting": "आयात हो रहा है...",
+    "vendor.gemIdRequired": "पहले GeM विक्रेता बोली ID डालें।",
+    "vendor.gemImportSuccess": "{n} दस्तावेज़ GeM से आयात हुए!",
+    "vendor.gemDemoHint": "डेमो ID: GEM-BID-2026-101, GEM-BID-2026-102 (GeM का सार्वजनिक API नहीं; मॉक पोर्टल लुकअप)",
 
     // ---- Tenders list ----
     "tenders.notProcessed": "संसाधित नहीं",
