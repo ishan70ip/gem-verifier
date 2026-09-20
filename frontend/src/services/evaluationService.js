@@ -7,6 +7,7 @@ export const completeEvaluation = id => apiRequest(`/evaluations/${id}/complete`
 export const createEvaluation = tenderId => apiRequest("/evaluations", { method: "POST", body: JSON.stringify({ tender_id: tenderId }) });
 export const runAiAnalysis = evaluationId => apiRequest(`/ai/evaluations/${evaluationId}/analyze`, { method: "POST" });
 export const getAiStatus = evaluationId => apiRequest(`/ai/evaluations/${evaluationId}/status`);
+export const getEvaluationAwards = evaluationId => apiRequest(`/evaluations/${evaluationId}/awards`);
 export const resolveComplianceResult = (resultId, status, reviewComment) => apiRequest(`/compliance/${resultId}`, {
   method: "PATCH",
   body: JSON.stringify({ status, review_comment: reviewComment }),

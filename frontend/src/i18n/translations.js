@@ -278,6 +278,10 @@ export const translations = {
     "award.confirmTitleMulti": "Approve vendors?",
     "award.confirmLeadMulti": "You are about to approve the following vendors:",
     "award.confirmAssignmentMulti": "Confirm approvals",
+    "award.alreadyApproved": "Approved ✓",
+    "award.allDoneTitle": "All vendors decided",
+    "award.allDoneDesc": "Every vendor on this tender has a decision recorded.",
+    "award.viewVendors": "View vendors",
 
     // ---- Compliance summary ----
     "evalSummary.documents": "Documents",
@@ -799,6 +803,10 @@ export const translations = {
     "award.confirmTitleMulti": "विक्रेता अनुमोदित करें?",
     "award.confirmLeadMulti": "आप निम्न विक्रेताओं को अनुमोदित करने जा रहे हैं:",
     "award.confirmAssignmentMulti": "अनुमोदन की पुष्टि करें",
+    "award.viewVendors": "विक्रेता देखें",
+    "award.alreadyApproved": "अनुमोदित ✓",
+    "award.allDoneTitle": "सभी विक्रेताओं पर निर्णय पूर्ण",
+    "award.allDoneDesc": "इस निविदा हेतु सभी विक्रेताओं पर निर्णय हो चुका है।",
 
     // ---- Compliance summary ----
     "evalSummary.documents": "दस्तावेज़",

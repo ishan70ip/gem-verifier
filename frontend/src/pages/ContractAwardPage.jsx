@@ -1,27 +1,29 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import AppShell from "@/components/AppShell";
-import { getEvaluationById } from "@/services/evaluationService";
+import { getEvaluationById, getEvaluationAwards } from "@/services/evaluationService";
 import { assignContract } from "@/services/procurementService";
 import { CheckCircle2, ArrowLeft, ShieldCheck, Award } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
-// Officer approval: tick one or more vendors to approve. Each approval
-// creates its own award record (visible in balance: backend allows repeat
-// POST /awards calls once the evaluation is complete).
+// Officer approval: tick vendors to approve; each creates its own record.
+// Already-approved vendors are locked with a chip, and once every vendor is
+// processed the page becomes a done-state with onward navigation.
 export default function ContractAwardPage() {
   const { t } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const [awards, setAwards] = useState([]);
   const [selected, setSelected] = useState([]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [approved, setApproved] = useState([]);
+  const [justApproved, setJustApproved] = useState([]);
 
   useEffect(() => {
     getEvaluationById(id).then(setData).catch(() => setData(null));
+    getEvaluationAwards(id).then(setAwards).catch(() => setAwards([]));
   }, [id]);
 
   if (!data) {
@@ -29,6 +31,10 @@ export default function ContractAwardPage() {
   }
 
   const vendors = data.vendors || [];
+  const approvedIds = new Set(awards.map((a) => a.vendorId));
+  const pending = vendors.filter((v) => !approvedIds.has(v.id));
+  const allDone = vendors.length > 0 && pending.length === 0;
+
   const toggle = (vendorId) =>
     setSelected((prev) => (prev.includes(vendorId) ? prev.filter((v) => v !== vendorId) : [...prev, vendorId]));
   const selectedVendors = vendors.filter((v) => selected.includes(v.id));
@@ -45,10 +51,14 @@ export default function ContractAwardPage() {
       const tenderId = data.evaluation.tenderId || data.evaluation.tender_id;
       const done = [];
       for (const vendor of selectedVendors) {
+        if (approvedIds.has(vendor.id)) continue;
         const award = await assignContract(id, vendor.id, tenderId);
         done.push({ vendor, award });
       }
-      setApproved(done);
+      const refreshed = await getEvaluationAwards(id).catch(() => []);
+      setAwards(refreshed);
+      setJustApproved(done);
+      setSelected([]);
       setConfirming(false);
     } catch {
       setError(t("award.saveError"));
@@ -72,56 +82,88 @@ export default function ContractAwardPage() {
             <span className="status-pill done"><CheckCircle2 size={13} /> {t("award.evaluationCompleted")}</span>
           </div>
           <div className="card-body">
-            <div className="alert alert-info" style={{ marginBottom: 18 }}><ShieldCheck size={15} /> {t("award.infoNoteMulti")}</div>
-            <div style={{ marginBottom: 18 }}>
-              <strong>{data.evaluation.title}</strong>
-              <div style={{ color: "var(--text-secondary)", fontSize: 12, marginTop: 4 }}>{data.evaluation.tenderReference} · {data.evaluation.department}</div>
-            </div>
-            {approved.length > 0 && (
-              <div className="alert alert-info" style={{ marginBottom: 18 }}>
-                <Award size={15} />
-                <div>
-                  <b>{t("award.approvedDone")}</b>
-                  {approved.map(({ vendor, award }) => (
-                    <div key={vendor.id} style={{ marginTop: 6, fontSize: 13 }}>
-                      {vendor.name} · <span className="mono">{award.contractReference}</span>
-                      {" · "}<Link to={`/contracts/${award.id}`}>{t("award.viewContract")}</Link>
-                    </div>
-                  ))}
+            {allDone ? (
+              <div style={{ textAlign: "center", padding: "24px 12px" }}>
+                <CheckCircle2 size={40} color="var(--gem-green)" style={{ marginBottom: 12 }} />
+                <h3 style={{ marginBottom: 8 }}>{t("award.allDoneTitle")}</h3>
+                <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 8 }}>{t("award.allDoneDesc")}</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
+                  {awards.map((a) => {
+                    const vendor = vendors.find((v) => v.id === a.vendorId);
+                    return (
+                      <div key={a.id} style={{ fontSize: 13 }}>
+                        {vendor?.name || a.vendorId} · <span className="mono">{a.contractReference}</span>
+                        {" · "}<Link to={`/contracts/${a.id}`}>{t("award.viewContract")}</Link>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+                  <Link to={`/evaluations/${id}`} className="btn btn-ghost">{t("award.backToEvaluation")}</Link>
+                  <Link to="/tenders" className="btn btn-ghost">{t("award.backToEvaluations")}</Link>
+                  <Link to="/vendors" className="btn btn-primary">{t("award.viewVendors")}</Link>
                 </div>
               </div>
-            )}
-            {vendors.length ? (
-              <form onSubmit={submit}>
-                <label className="field-label">{t("award.selectVendors")}</label>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                  {vendors.map((vendor) => (
-                    <label key={vendor.id} className="req-item-box" style={{ display: "flex", gap: 10, alignItems: "center", cursor: "pointer" }}>
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(vendor.id)}
-                        onChange={() => toggle(vendor.id)}
-                      />
-                      <span style={{ flex: 1 }}>
-                        <b style={{ fontSize: 13.5 }}>{vendor.name}</b>
-                        <small style={{ display: "block", color: "var(--text-secondary)" }}>
-                          {vendor.compliancePercentage ?? "—"}% · {vendor.eligibility?.replace("_", " ")}
-                        </small>
-                      </span>
-                      <span className="chip">{vendor.riskLevel || ""}</span>
-                    </label>
-                  ))}
-                </div>
-                {error && <div className="alert alert-error" style={{ marginBottom: 14 }}>{error}</div>}
-                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-                  <Link to={`/evaluations/${id}`} className="btn btn-ghost">{t("award.cancel")}</Link>
-                  <button className="btn btn-primary" disabled={saving || selected.length === 0}>
-                    <Award size={14} /> {t("award.approveSelected")} ({selected.length})
-                  </button>
-                </div>
-              </form>
             ) : (
-              <div className="empty-state"><h3>{t("award.noEligibleTitle")}</h3><p>{t("award.noEligibleDesc")}</p></div>
+              <>
+                <div className="alert alert-info" style={{ marginBottom: 18 }}><ShieldCheck size={15} /> {t("award.infoNoteMulti")}</div>
+                <div style={{ marginBottom: 18 }}>
+                  <strong>{data.evaluation.title}</strong>
+                  <div style={{ color: "var(--text-secondary)", fontSize: 12, marginTop: 4 }}>{data.evaluation.tenderReference} · {data.evaluation.department}</div>
+                </div>
+                {justApproved.length > 0 && (
+                  <div className="alert alert-info" style={{ marginBottom: 18 }}>
+                    <Award size={15} />
+                    <div>
+                      <b>{t("award.approvedDone")}</b>
+                      {justApproved.map(({ vendor, award }) => (
+                        <div key={vendor.id} style={{ marginTop: 6, fontSize: 13 }}>
+                          {vendor.name} · <span className="mono">{award.contractReference}</span>
+                          {" · "}<Link to={`/contracts/${award.id}`}>{t("award.viewContract")}</Link>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {vendors.length ? (
+                  <form onSubmit={submit}>
+                    <label className="field-label">{t("award.selectVendors")}</label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                      {vendors.map((vendor) => {
+                        const done = approvedIds.has(vendor.id);
+                        return (
+                          <label key={vendor.id} className="req-item-box" style={{ display: "flex", gap: 10, alignItems: "center", cursor: done ? "default" : "pointer", opacity: done ? 0.65 : 1 }}>
+                            <input
+                              type="checkbox"
+                              checked={done || selected.includes(vendor.id)}
+                              disabled={done}
+                              onChange={() => toggle(vendor.id)}
+                            />
+                            <span style={{ flex: 1 }}>
+                              <b style={{ fontSize: 13.5 }}>{vendor.name}</b>
+                              <small style={{ display: "block", color: "var(--text-secondary)" }}>
+                                {vendor.compliancePercentage ?? "—"}% · {vendor.eligibility?.replace("_", " ")}
+                              </small>
+                            </span>
+                            {done
+                              ? <span className="chip">{t("award.alreadyApproved")}</span>
+                              : <span className="chip">{vendor.riskLevel || ""}</span>}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {error && <div className="alert alert-error" style={{ marginBottom: 14 }}>{error}</div>}
+                    <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                      <Link to={`/evaluations/${id}`} className="btn btn-ghost">{t("award.cancel")}</Link>
+                      <button className="btn btn-primary" disabled={saving || selected.length === 0}>
+                        <Award size={14} /> {t("award.approveSelected")} ({selected.length})
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="empty-state"><h3>{t("award.noEligibleTitle")}</h3><p>{t("award.noEligibleDesc")}</p></div>
+                )}
+              </>
             )}
           </div>
         </section>
