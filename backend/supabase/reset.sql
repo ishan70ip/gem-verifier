@@ -4,6 +4,7 @@
 TRUNCATE
   documents,
   audit_logs,
+  rejections,
   contract_awards,
   compliance_results,
   evaluations,

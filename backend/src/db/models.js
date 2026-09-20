@@ -19,6 +19,7 @@ export const {
   ComplianceResult,
   Evaluation,
   Award,
+  Rejection,
   AuditLog,
   Document,
   connectDatabase,

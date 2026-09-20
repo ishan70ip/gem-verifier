@@ -24,6 +24,7 @@ const COLLECTIONS = [
   "compliance_results",
   "evaluations",
   "contract_awards",
+  "rejections",
   "audit_logs",
   "documents",
 ];
@@ -299,6 +300,7 @@ export const Bid = createCollection("bids");
 export const ComplianceResult = createCollection("compliance_results");
 export const Evaluation = createCollection("evaluations");
 export const Award = createCollection("contract_awards");
+export const Rejection = createCollection("rejections");
 export const AuditLog = createCollection("audit_logs");
 export const Document = createCollection("documents");
 
