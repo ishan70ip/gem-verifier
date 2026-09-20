@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const outDir = path.join(here, "..", "..", "demo-docs", "cert-pack");
+const outDir = path.join(here, "..", "..", "..", "demo-docs", "cert-pack");
 fs.mkdirSync(outDir, { recursive: true });
 
 const esc = (s) => s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
@@ -18,7 +18,7 @@ const F = {
   Bold: "/F2",
 };
 function text(x, y, size, font, str, color = null) {
-  const c = color ? `${color} rg\n` : "";
+  const c = color ? `${color} rg\n` : "0 0 0 rg\n"; // never inherit: default to black
   return `${c}BT ${font} ${size} Tf 1 0 0 1 ${x} ${y} Tm (${esc(str.slice(0, 120))}) Tj ET`;
 }
 function fillRect(x, y, w, h, r, g, b) {
