@@ -34,6 +34,8 @@ export default function VendorDashboard() {
   const [bids, setBids] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [documentsMap, setDocumentsMap] = useState({}); // bidId -> docs[]
+  const [feedbackMap, setFeedbackMap] = useState({}); // bidId -> { available, items[] }
+  const [rejections, setRejections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("tenders"); // tenders | bids | contracts | profile
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,6 +53,11 @@ export default function VendorDashboard() {
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({ legalName: "", phone: "", category: "MSME", gstin: "" });
+  const [gemBidId, setGemBidId] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [gemPanelOpen, setGemPanelOpen] = useState(false);
+  const [gemBids, setGemBids] = useState([]);
+  const [gemLoading, setGemLoading] = useState(false);
 
   const showNotification = (text, type = "success") => {
     setNotification({ text, type });
@@ -64,11 +71,12 @@ export default function VendorDashboard() {
   const loadAllVendorData = async () => {
     try {
       setLoading(true);
-      const [profData, tendData, bidsData, contData] = await Promise.allSettled([
+      const [profData, tendData, bidsData, contData, rejData] = await Promise.allSettled([
         apiRequest("/vendor/profile"),
         apiRequest("/vendor/tenders"),
         apiRequest("/vendor/bids"),
         apiRequest("/vendor/contracts"),
+        apiRequest("/vendor/rejections"),
       ]);
 
       if (profData.status === "fulfilled" && profData.value) {
@@ -85,7 +93,7 @@ export default function VendorDashboard() {
       if (bidsData.status === "fulfilled") {
         const bidList = bidsData.value || [];
         setBids(bidList);
-        // Fetch documents for each bid
+        // Fetch documents + officer feedback for each bid
         bidList.forEach(async (bid) => {
           try {
             const docs = await apiRequest(`/vendor/bids/${bid.id}/documents`);
@@ -93,10 +101,17 @@ export default function VendorDashboard() {
           } catch {
             // ignore doc fetch error if empty
           }
+          try {
+            const fb = await apiRequest(`/vendor/bids/${bid.id}/feedback`);
+            setFeedbackMap((prev) => ({ ...prev, [bid.id]: fb || { available: false, items: [] } }));
+          } catch {
+            // feedback unavailable yet
+          }
         });
       }
 
       if (contData.status === "fulfilled") setContracts(contData.value || []);
+      if (rejData.status === "fulfilled") setRejections(rejData.value || []);
     } catch (err) {
       console.error("Failed loading vendor portal data", err);
     } finally {
@@ -208,6 +223,52 @@ export default function VendorDashboard() {
     }
   };
 
+  const handleImportGem = async (bidId, gemId) => {
+    const chosen = (gemId || gemBidId || "").trim();
+    if (!chosen) {
+      showNotification(t("vendor.gemIdRequired"), "error");
+      return;
+    }
+    try {
+      setIsImporting(true);
+      const res = await apiRequest(`/vendor/bids/${bidId}/import-gem`, {
+        method: "POST",
+        body: JSON.stringify({ gem_bid_id: chosen }),
+      });
+      const imported = res.imported || [];
+      setDocumentsMap((prev) => ({
+        ...prev,
+        [bidId]: [...(prev[bidId] || []), ...imported],
+      }));
+      setGemBidId("");
+      if (imported.length === 0) {
+        showNotification(t("vendor.gemAlreadyImported"), "success");
+      } else {
+        showNotification(t("vendor.gemImportSuccess").replace("{n}", imported.length), "success");
+      }
+    } catch (err) {
+      showNotification(err.message, "error");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleToggleGemPanel = async () => {
+    const next = !gemPanelOpen;
+    setGemPanelOpen(next);
+    if (next && gemBids.length === 0 && !gemLoading) {
+      try {
+        setGemLoading(true);
+        const res = await apiRequest("/vendor/gem-bids/demo-ids");
+        setGemBids(res.bids || (res.demo_ids || []).map((id) => ({ id })));
+      } catch {
+        setGemBids([]);
+      } finally {
+        setGemLoading(false);
+      }
+    }
+  };
+
   // Calculations & Filtering
   const handleDownloadDoc = async (doc) => {
     try {
@@ -236,6 +297,13 @@ export default function VendorDashboard() {
   );
 
   const totalDocsCount = Object.values(documentsMap).reduce((acc, curr) => acc + curr.length, 0);
+
+  // Bid (if any) the vendor already submitted for the tender open in Modal 1.
+  // Its documents can be managed inline: direct upload + GeM import.
+  const modalBid = selectedTender && !isBiddingModalOpen
+    ? bids.find((b) => b.tenderId === selectedTender.id)
+    : null;
+  const modalBidDocs = modalBid ? documentsMap[modalBid.id] || [] : [];
 
   return (
     <AppShell>
@@ -316,6 +384,9 @@ export default function VendorDashboard() {
         </button>
         <button className={activeTab === "contracts" ? "nav-tab-btn active" : "nav-tab-btn"} onClick={() => setActiveTab("contracts")}>
           <Award size={16} /> {t("vendor.awardedContracts")} ({contracts.length})
+        </button>
+        <button className={activeTab === "rejected" ? "nav-tab-btn active" : "nav-tab-btn"} onClick={() => setActiveTab("rejected")}>
+          <X size={16} /> {t("vendor.rejectedBids")} ({rejections.length})
         </button>
       </div>
 
@@ -459,6 +530,35 @@ export default function VendorDashboard() {
                             )}
                           </div>
 
+                          {/* Officer decision feedback (visible after evaluation is final) */}
+                          {(() => {
+                            const fb = feedbackMap[bid.id];
+                            if (!fb || !fb.available) return null;
+                            const okCount = fb.items.filter((i) => i.status === "compliant").length;
+                            return (
+                              <div className="bid-docs-section">
+                                <h5>
+                                  <ShieldCheck size={16} /> {t("vendor.officerDecision")} ({okCount}/{fb.items.length} {t("vendor.compliantCount")})
+                                </h5>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                  {fb.items.map((item) => (
+                                    <div key={item.id} className="req-item-box">
+                                      <div className="req-header">
+                                        <strong>{item.requirement}</strong>
+                                        <span className="req-cat-badge">{item.status === "compliant" ? t("vendor.fbCompliant") : item.status === "non_compliant" ? t("vendor.fbNonCompliant") : t("vendor.fbReview")}</span>
+                                      </div>
+                                      {item.officer_reason ? (
+                                        <p><b>{t("vendor.officerReason")}</b> {item.officer_reason}</p>
+                                      ) : (
+                                        <p className="no-docs-text">{t("vendor.noReasonYet")}</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
+
                           {/* Inline File Upload Form */}
                           <div className="bid-upload-area">
                             {activeUploadBidId === bid.id ? (
@@ -549,6 +649,41 @@ export default function VendorDashboard() {
               )}
             </div>
           )}
+
+          {activeTab === "rejected" && (
+            <div className="vendor-section-card">
+              <div className="section-toolbar">
+                <div>
+                  <h2>{t("vendor.rejectedTitle")}</h2>
+                  <p className="subtext">{t("vendor.rejectedSubtitle")}</p>
+                </div>
+              </div>
+
+              {rejections.length === 0 ? (
+                <div className="vendor-empty-state">{t("vendor.noRejections")}</div>
+              ) : (
+                <div className="contracts-grid">
+                  {rejections.map((rejection) => (
+                    <div key={rejection.id} className="vendor-contract-card">
+                      <div className="contract-card-header">
+                        <span className="contract-ref-badge">{rejection.tenderReference || t("vendor.tenderRefLabel")}</span>
+                        <span className="award-active-badge">{t("vendor.rejectedBadge")}</span>
+                      </div>
+                      <h3>{rejection.tenderTitle || t("vendor.rejectedBid")}</h3>
+                      <p className="award-date">
+                        {t("vendor.rejectedOn")} {rejection.decidedAt ? new Date(rejection.decidedAt).toLocaleDateString() : "—"}
+                      </p>
+                      <div className="contract-actions">
+                        <span className="award-eligible-tag">
+                          <X size={15} /> {rejection.reason || t("vendor.noReasonYet")}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -585,6 +720,95 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 <p className="no-reqs-text">{t("vendor.noReqsText")}</p>
+              )}
+
+              {!modalBid && (
+                <p className="field-hint" style={{ marginTop: 12 }}>{t("vendor.submitFirstHint")}</p>
+              )}
+
+              {modalBid && (
+                <div className="bid-docs-section" style={{ marginTop: 16 }}>
+                  <h5>
+                    <FileCheck size={16} /> {t("vendor.submittedDocuments")} ({modalBidDocs.length})
+                  </h5>
+                  {modalBidDocs.length > 0 && (
+                    <div className="docs-flex-list" style={{ marginBottom: 12 }}>
+                      {modalBidDocs.map((doc) => (
+                        <div key={doc.id} className="doc-item-pill">
+                          <div className="doc-info font-bold">
+                            <span>{doc.originalFilename}</span>
+                            <small>{doc.documentType}</small>
+                          </div>
+                          <button onClick={() => handleDownloadDoc(doc)} className="btn-download-doc" title={t("vendor.downloadFileTitle")}>
+                            <Download size={13} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <form onSubmit={(e) => handleUploadDocument(e, modalBid.id)} className="upload-form-expanded" style={{ marginBottom: 12 }}>
+                    <div className="form-row">
+                      <label>{t("vendor.docCategoryLabel")}</label>
+                      <select value={docCategory} onChange={(e) => setDocCategory(e.target.value)}>
+                        <option value="Technical Proposal">{t("vendor.docTypeTechnical")}</option>
+                        <option value="ISO 9001 Certificate">{t("vendor.docTypeIso")}</option>
+                        <option value="OEM Warranty Letter">{t("vendor.docTypeWarranty")}</option>
+                        <option value="Past Contract Experience">{t("vendor.docTypeExperience")}</option>
+                        <option value="Commercial Bid Financial Quote">{t("vendor.docTypeCommercial")}</option>
+                      </select>
+                    </div>
+                    <div className="form-row">
+                      <label>{t("vendor.selectFileLabel")}</label>
+                      <input type="file" required onChange={(e) => setFileToUpload(e.target.files[0])} />
+                    </div>
+                    <div className="form-btn-group">
+                      <button type="submit" disabled={isUploading} className="btn-upload-submit">
+                        {isUploading ? t("vendor.uploading") : t("vendor.uploadDocument")}
+                      </button>
+                    </div>
+                  </form>
+                  <div className="upload-form-expanded">
+                    <div className="form-row">
+                      <label>{t("vendor.gemImportTitle")}</label>
+                      <p className="subtext" style={{ margin: "0 0 8px" }}>{t("vendor.gemImportDesc")}</p>
+                      <button
+                        type="button"
+                        className="btn-trigger-upload"
+                        onClick={handleToggleGemPanel}
+                      >
+                        <Download size={14} /> {t("vendor.gemBrowseBtn")}
+                      </button>
+                      {gemPanelOpen && (
+                        <div style={{ marginTop: 10 }}>
+                          {gemLoading && <p className="subtext">{t("vendor.gemLoadingIds")}</p>}
+                          {!gemLoading && gemBids.length === 0 && (
+                            <p className="subtext">{t("vendor.gemNoIds")}</p>
+                          )}
+                          {!gemLoading && gemBids.map((bundle) => (
+                            <div key={bundle.id} className="doc-item-pill" style={{ marginBottom: 8 }}>
+                              <div className="doc-info font-bold">
+                                <span className="mono">{bundle.id}</span>
+                                <small>
+                                  {bundle.seller || ""}
+                                  {bundle.docs ? ` · ${bundle.docs.length} ${t("vendor.gemDocsUnit")}` : ""}
+                                </small>
+                              </div>
+                              <button
+                                type="button"
+                                disabled={isImporting}
+                                className="btn-upload-submit"
+                                onClick={() => handleImportGem(modalBid.id, bundle.id)}
+                              >
+                                {isImporting ? t("vendor.gemImporting") : t("vendor.gemImportBtn")}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="field-hint" style={{ marginTop: 6 }}>{t("vendor.gemDemoHint")}</div>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 

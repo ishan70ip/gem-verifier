@@ -118,6 +118,20 @@ CREATE TABLE IF NOT EXISTS contract_awards (
   "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS rejections (
+  "_id" UUID PRIMARY KEY,
+  "tenderId" UUID,
+  "evaluationId" UUID,
+  "vendorId" UUID REFERENCES vendors("_id"),
+  reason TEXT,
+  status TEXT DEFAULT 'REJECTED',
+  "decidedBy" UUID,
+  "decidedAt" TIMESTAMPTZ,
+  "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_rejections_eval ON rejections("evaluationId", "vendorId");
+
 CREATE TABLE IF NOT EXISTS audit_logs (
   "_id" UUID PRIMARY KEY,
   "actorUserId" UUID,
@@ -165,6 +179,7 @@ ALTER TABLE bids ENABLE ROW LEVEL SECURITY;
 ALTER TABLE compliance_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE evaluations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contract_awards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rejections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 
@@ -178,6 +193,7 @@ DO $$ BEGIN
     CREATE POLICY "anon read all" ON compliance_results FOR SELECT TO anon USING (true);
     CREATE POLICY "anon read all" ON evaluations FOR SELECT TO anon USING (true);
     CREATE POLICY "anon read all" ON contract_awards FOR SELECT TO anon USING (true);
+    CREATE POLICY "anon read all" ON rejections FOR SELECT TO anon USING (true);
     CREATE POLICY "anon read all" ON audit_logs FOR SELECT TO anon USING (true);
     CREATE POLICY "anon read all" ON documents FOR SELECT TO anon USING (true);
   END IF;
