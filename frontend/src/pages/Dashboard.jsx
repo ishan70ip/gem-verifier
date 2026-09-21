@@ -77,9 +77,6 @@ export default function Dashboard() {
             <div className="section-kicker">{t("procurementWorkspace")}</div>
             <h2>{t("yourWorkspace")}</h2>
           </div>
-          <div className="portal-date">
-            <span className="live-dot" /> {isRealtimeEnabled() ? t("liveSyncConnected") : t("systemOperational")}
-          </div>
         </div>
 
         <div className="command-layout">
