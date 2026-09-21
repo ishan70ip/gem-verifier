@@ -9,7 +9,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>
 endobj
 4 0 obj
-<< /Length 1041 >>
+<< /Length 1050 >>
 stream
 0.12 0.3 0.62 rg 40 480 532 240 re f 0 0 0 rg
 q 2 w 0 0 0 RG 40 480 532 240 re S Q 0 0 0 RG
@@ -39,6 +39,7 @@ BT /F2 10 Tf 1 0 0 1 70 520 Tm (Permanent Account Number /) Tj ET
 1 1 1 rg
 BT /F2 16 Tf 1 0 0 1 70 500 Tm (AAACA1234F) Tj ET
 0.95 0.95 0.95 rg 40 440 532 26 re f 0 0 0 rg
+0 0 0 rg
 BT /F1 9 Tf 1 0 0 1 60 448 Tm (Acme Procurement Systems Pvt Ltd - Company PAN) Tj ET
 endstream
 endobj
@@ -55,10 +56,10 @@ xref
 0000000058 00000 n 
 0000000115 00000 n 
 0000000251 00000 n 
-0000001344 00000 n 
-0000001414 00000 n 
+0000001353 00000 n 
+0000001423 00000 n 
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-1489
+1498
 %%EOF

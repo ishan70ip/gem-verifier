@@ -9,7 +9,8 @@ import { analyzeEvaluation } from "../services/analyze.js";
 import { extractTextFromFile } from "../services/extract.js";
 import { geminiMode } from "../services/gemini.js";
 import { verifyVendorOnPortals } from "../services/mockPortals.js";
-import { saveUpload, readFile } from "../services/storage.js";
+import { saveUpload, saveBuffer, readFile } from "../services/storage.js";
+import { lookupGemBid, makePdf, GEM_BID_IDS } from "../services/dummyDocs.js";
 import {
   AuditLog,
   Award,
@@ -17,6 +18,7 @@ import {
   ComplianceResult,
   Document,
   Evaluation as EvaluationModel,
+  Rejection,
   Requirement,
   Tender,
   User,
@@ -187,6 +189,46 @@ router.get("/evaluations/:id/matrix", ...officer, asyncRoute(async (req, res) =>
   res.json((await evaluationPayload(evaluation)).results);
 }));
 router.get("/evaluations/:id/results", ...officer, asyncRoute(async (req, res) => res.json((await ComplianceResult.find({ evaluationId: req.params.id }).lean()).map(clean))));
+router.get("/evaluations/:id/awards", ...officer, asyncRoute(async (req, res) => res.json((await Award.find({ evaluationId: req.params.id }).lean()).map(clean))));
+// Explicit rejections: officer rejects a vendor with a stated reason.
+// Rejected vendors appear in the vendor's Rejected tab with that reason.
+router.get("/evaluations/:id/rejections", ...officer, asyncRoute(async (req, res) => res.json((await Rejection.find({ evaluationId: req.params.id }).lean()).map(clean))));
+router.post("/evaluations/:id/rejections", ...officer, asyncRoute(async (req, res) => {
+  const { vendor_id, reason } = req.body;
+  const evaluation = await EvaluationModel.findById(req.params.id).lean();
+  if (!evaluation) return res.status(404).json({ detail: "Evaluation not found" });
+  if (!await Bid.exists({ tenderId: evaluation.tenderId, vendorId: vendor_id })) {
+    return res.status(400).json({ detail: "Vendor has no bid in this tender" });
+  }
+  if (await Award.exists({ evaluationId: evaluation._id, vendorId: vendor_id })) {
+    return res.status(409).json({ detail: "Vendor already approved - remove the approval first" });
+  }
+  const existing = await Rejection.findOne({ evaluationId: evaluation._id, vendorId: vendor_id });
+  if (existing) {
+    Object.assign(existing, { reason: reason || "", decidedBy: req.user.id, decidedAt: new Date().toISOString() });
+    await existing.save();
+    await audit(req.user, "rejection.updated", "rejection", existing._id || existing.id, { vendor_id });
+    return res.json(clean(existing.toObject ? existing.toObject() : existing));
+  }
+  const rejection = await Rejection.create({
+    tenderId: evaluation.tenderId,
+    evaluationId: evaluation._id,
+    vendorId: vendor_id,
+    reason: reason || "",
+    status: "REJECTED",
+    decidedBy: req.user.id,
+    decidedAt: new Date().toISOString(),
+  });
+  await audit(req.user, "vendor.rejected", "rejection", rejection._id || rejection.id, { vendor_id });
+  res.status(201).json(clean(rejection.toObject ? rejection.toObject() : rejection));
+}));
+router.delete("/rejections/:id", ...officer, asyncRoute(async (req, res) => {
+  const rejection = await Rejection.findById(req.params.id);
+  if (!rejection) return res.status(404).json({ detail: "Rejection not found" });
+  await Rejection.deleteMany({ _id: rejection._id || rejection.id });
+  await audit(req.user, "rejection.removed", "rejection", rejection._id || rejection.id, {});
+  res.status(204).end();
+}));
 router.post("/evaluations/:id/complete", ...officer, asyncRoute(async (req, res) => {
   const evaluation = await EvaluationModel.findById(req.params.id);
   if (!evaluation) return res.status(404).json({ detail: "Evaluation not found" });
@@ -209,7 +251,7 @@ router.patch("/compliance/:id", ...officer, asyncRoute(async (req, res) => {
   if (["AWARDED", "LOCKED"].includes(evaluation?.status)) return res.status(409).json({ detail: "Awarded evaluations are read-only" });
   Object.assign(result, { status, determinationSource: "human", humanReviewed: true, reviewedBy: req.user.id, reviewedAt: new Date(), reviewComment: req.body.review_comment });
   await result.save();
-  await audit(req.user, "compliance_result.updated", "compliance_result", result._id, { status });
+  await audit(req.user, "compliance_result.updated", "compliance_result", result._id, { status, review_comment: req.body.review_comment || null });
   res.json(clean(result.toObject()));
 }));
 
@@ -231,8 +273,14 @@ router.post("/awards", ...officer, asyncRoute(async (req, res) => {
   const { tender_id, evaluation_id, vendor_id } = req.body;
   const evaluation = await EvaluationModel.findOne({ _id: evaluation_id, tenderId: tender_id });
   const results = await ComplianceResult.find({ evaluationId: evaluation_id, vendorId: vendor_id });
-  if (!evaluation || !["COMPLETED", "EVALUATION_COMPLETED"].includes(evaluation.status)) return res.status(409).json({ detail: "Evaluation must be complete before award" });
-  if (!results.length || results.some(r => r.status !== "compliant")) return res.status(409).json({ detail: "Selected vendor is not eligible" });
+  if (!evaluation || !["COMPLETED", "EVALUATION_COMPLETED", "AWARDED"].includes(evaluation.status)) return res.status(409).json({ detail: "Evaluation must be complete before approval" });
+  // Officer discretion: any bidding vendor with results may be approved
+  // (including conditional ones); the decision + reason is the officer's
+  // responsibility and is audit-logged. Repeat calls approve more vendors.
+  if (!results.length) return res.status(409).json({ detail: "Selected vendor has no evaluation results" });
+  if (await Award.exists({ tenderId: tender_id, vendorId: vendor_id })) {
+    return res.status(409).json({ detail: "Vendor already approved for this tender" });
+  }
   const award = await Award.create({ tenderId: tender_id, evaluationId: evaluation_id, vendorId: vendor_id, status: "ACTIVE", awardedAt: new Date(), awardedBy: req.user.id, contractReference: `CON-${Date.now()}` });
   await Tender.findByIdAndUpdate(tender_id, { status: "AWARDED", awardedVendorId: vendor_id });
   await EvaluationModel.findByIdAndUpdate(evaluation_id, { status: "AWARDED" });
@@ -440,6 +488,75 @@ router.get("/vendor/bids/:id/documents", ...vendor, asyncRoute(async (req, res) 
   if (!await Bid.exists({ _id: req.params.id, vendorId: vendorDoc._id })) return res.status(404).json({ detail: "Bid not found" });
   res.json((await Document.find({ bidId: req.params.id, vendorId: vendorDoc._id }).lean()).map(clean));
 }));
+// Officer feedback for a vendor's own bid: requirement-level decisions with
+// the officer's stated reasons. Visible only after the evaluation is final
+// (COMPLETED / AWARDED) - never mid-review.
+router.get("/vendor/bids/:id/feedback", ...vendor, asyncRoute(async (req, res) => {
+  const vendorDoc = await Vendor.findOne({ userId: req.user.id });
+  const bid = await Bid.findOne({ _id: req.params.id, vendorId: vendorDoc._id }).lean();
+  if (!bid) return res.status(404).json({ detail: "Bid not found" });
+  const evaluation = await EvaluationModel.findOne({ tenderId: bid.tenderId }).lean();
+  if (!evaluation || !["COMPLETED", "EVALUATION_COMPLETED", "AWARDED"].includes(evaluation.status)) {
+    return res.json({ available: false, items: [] });
+  }
+  const [requirements, results] = await Promise.all([
+    Requirement.find({ tenderId: bid.tenderId }).sort({ requirementOrder: 1 }).lean(),
+    ComplianceResult.find({ bidId: bid._id, vendorId: vendorDoc._id }).lean(),
+  ]);
+  const titleOf = Object.fromEntries(requirements.map((r) => [r._id, r.title]));
+  res.json({
+    available: true,
+    evaluation_status: evaluation.status,
+    items: results.map((r) => ({
+      id: r._id,
+      requirement: titleOf[r.requirementId] || "Requirement",
+      status: r.status,
+      officer_reason: r.reviewComment || null,
+      explanation: r.explanation || null,
+      reviewed_at: r.reviewedAt || null,
+    })),
+  });
+}));
+// Import documents from a GeM seller bid (mock GeM portal lookup - the real
+// GeM portal exposes no public API, so this registry stands in for an
+// authorized connector; production swaps lookupGemBid only).
+router.get("/vendor/gem-bids/demo-ids", ...vendor, asyncRoute(async (_req, res) => res.json({
+  demo_ids: GEM_BID_IDS,
+  bids: GEM_BID_IDS.map((id) => {
+    const bundle = lookupGemBid(id);
+    return { id, seller: bundle.seller, tenderRef: bundle.tenderRef, docs: bundle.docs.map((d) => ({ name: d.name, type: d.type })) };
+  }),
+})));
+router.post("/vendor/bids/:id/import-gem", ...vendor, asyncRoute(async (req, res) => {
+  const vendorDoc = await Vendor.findOne({ userId: req.user.id });
+  const bid = await Bid.findOne({ _id: req.params.id, vendorId: vendorDoc._id });
+  if (!bid) return res.status(404).json({ detail: "Bid not found" });
+  const gemBid = lookupGemBid(req.body.gem_bid_id);
+  if (!gemBid) return res.status(404).json({ detail: `Unknown GeM seller bid "${req.body.gem_bid_id || ""}". Try a demo ID: ${GEM_BID_IDS.join(", ")}` });
+  const created = [];
+  for (const item of gemBid.docs) {
+    const filename = item.name;
+    if (await Document.findOne({ bidId: bid._id, originalFilename: filename }).lean()) continue;
+    const stored = await saveBuffer(filename, makePdf(item.lines), "application/pdf");
+    const document = await Document.create({
+      bidId: bid._id,
+      tenderId: bid.tenderId,
+      vendorId: vendorDoc._id,
+      documentType: item.type,
+      originalFilename: filename,
+      storagePath: stored.storagePath,
+      mimeType: "application/pdf",
+      fileSize: stored.fileSize,
+      uploadedBy: req.user.id,
+      visibility: "vendor_and_officer",
+      status: "ACTIVE",
+      uploadedAt: new Date(),
+    });
+    created.push(clean(document.toObject()));
+  }
+  await audit(req.user, "document.imported_from_gem", "bid", bid._id, { gem_bid_id: req.body.gem_bid_id, imported: created.length });
+  res.status(201).json({ imported: created, gem_bid: req.body.gem_bid_id, skipped_duplicates: gemBid.docs.length - created.length });
+}));
 router.get("/documents/:id/download", auth, asyncRoute(async (req, res) => {
   const document = await Document.findById(req.params.id).lean();
   if (!document) return res.status(404).json({ detail: "Document not found" });
@@ -471,6 +588,18 @@ router.get("/vendor/contracts/:id/documents", ...vendor, asyncRoute(async (req, 
   const award = await Award.findOne({ _id: req.params.id, vendorId: vendorDoc._id });
   if (!award) return res.status(404).json({ detail: "Contract award not found" });
   res.json((await Document.find({ contractAwardId: award._id }).lean()).map(clean));
+}));
+// Vendor's own rejections with officer-stated reasons.
+router.get("/vendor/rejections", ...vendor, asyncRoute(async (req, res) => {
+  const vendorDoc = await Vendor.findOne({ userId: req.user.id });
+  const rejections = await Rejection.find({ vendorId: vendorDoc._id }).lean();
+  const tenders = await Tender.find({ _id: { $in: rejections.map(r => r.tenderId) } }).lean();
+  const tenderById = Object.fromEntries(tenders.map(t => [t._id, t]));
+  res.json(rejections.map(r => ({
+    ...clean(r),
+    tenderReference: tenderById[r.tenderId]?.referenceNumber || null,
+    tenderTitle: tenderById[r.tenderId]?.title || null,
+  })));
 }));
 
 export default router;

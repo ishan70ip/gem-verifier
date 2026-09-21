@@ -239,6 +239,7 @@ export const Bid = createCollection("bids");
 export const ComplianceResult = createCollection("compliance_results");
 export const Evaluation = createCollection("evaluations");
 export const Award = createCollection("contract_awards");
+export const Rejection = createCollection("rejections");
 export const AuditLog = createCollection("audit_logs");
 export const Document = createCollection("documents");
 
@@ -251,7 +252,7 @@ export async function connectDatabase() {
 
 export async function resetDatabase() {
   const supabase = await getClient();
-  for (const table of ["documents", "audit_logs", "contract_awards", "compliance_results", "evaluations", "bids", "tender_requirements", "tenders", "vendors", "users"]) {
+  for (const table of ["documents", "audit_logs", "rejections", "contract_awards", "compliance_results", "evaluations", "bids", "tender_requirements", "tenders", "vendors", "users"]) {
     const { error } = await supabase.from(table).delete().neq("_id", "00000000-0000-0000-0000-000000000000");
     if (error) throw error;
   }
