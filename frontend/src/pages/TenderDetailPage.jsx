@@ -6,10 +6,9 @@ import DocumentPreviewModal from "@/components/evaluation/DocumentPreviewModal";
 import { getTender } from "@/services/procurementService";
 import { createEvaluation, runAiAnalysis } from "@/services/evaluationService";
 import { apiRequest } from "@/services/apiClient";
-import { ArrowRight, FileText, FolderOpen, Sparkles, Upload, Users, Calendar, ShieldCheck } from "lucide-react";
+import { ArrowRight, FileText, FolderOpen, Sparkles, Users, Calendar, ShieldCheck } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 export default function TenderDetailPage() {
   const { t } = useLanguage();
@@ -44,36 +43,6 @@ export default function TenderDetailPage() {
       setError(err.message || t("tenderDetail.verificationFailed"));
     } finally {
       setBusy("");
-    }
-  };
-
-  const handleUploadNotice = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setBusy("upload");
-    setError("");
-    setNotice("");
-    try {
-      const token = window.localStorage.getItem("gem_access_token");
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("document_type", "tender_notice");
-      const res = await fetch(`${API_BASE_URL}/tenders/${id}/documents`, {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.detail || t("tenderDetail.noticeUploadFailed"));
-      }
-      setNotice(t("tenderDetail.noticeUploaded"));
-      load();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy("");
-      event.target.value = "";
     }
   };
 
@@ -144,10 +113,6 @@ export default function TenderDetailPage() {
             <button className="btn btn-primary" disabled={busy === "analyze" || bids.length === 0} onClick={handleRunVerification} title={bids.length === 0 ? t("tenderDetail.waitingForBids") : t("tenderDetail.runVerificationHint")}>
               <Sparkles size={15} /> {busy === "analyze" ? t("tenderDetail.analysingBids") : t("tenderDetail.runVerification")}
             </button>
-            <label className="btn btn-ghost" style={{ cursor: "pointer" }}>
-              <Upload size={14} /> {busy === "upload" ? t("tenderDetail.uploadingNotice") : t("tenderDetail.uploadNotice")}
-              <input type="file" accept=".pdf,.txt" style={{ display: "none" }} onChange={handleUploadNotice} disabled={busy === "upload"} />
-            </label>
             {bids.length === 0 && <div className="field-hint">{t("tenderDetail.enabledOnceHint")}</div>}
           </div>
         </section>
