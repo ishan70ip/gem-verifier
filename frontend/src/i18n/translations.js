@@ -305,6 +305,7 @@ export const translations = {
     "tenders.evDeptFallback": "Department unavailable",
     "tenders.evCompliance": "Compliance",
     "tenders.evNotEvaluated": "Not evaluated",
+    "tenders.evUnderEval": "Under evaluation",
 
     // ---- Tender detail ----
     "tenderDetail.loadingTitle": "Loading tender",
@@ -951,6 +952,7 @@ export const translations = {
     "tenders.evDeptFallback": "विभाग उपलब्ध नहीं",
     "tenders.evCompliance": "अनुपालन",
     "tenders.evNotEvaluated": "मूल्यांकन नहीं हुआ",
+    "tenders.evUnderEval": "मूल्यांकन जारी",
 
     // ---- Tender detail ----
     "tenderDetail.loadingTitle": "निविदा लोड हो रही है",

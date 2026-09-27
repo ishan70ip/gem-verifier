@@ -9,6 +9,7 @@ import { useLanguage } from "../context/LanguageContext";
 function EvaluationCard({ tender }) {
   const { t } = useLanguage();
   const evaluated = tender.compliancePercentage != null;
+  const underEval = !evaluated && (tender.status === "EVALUATION_IN_PROGRESS" || tender.status === "EVALUATION_COMPLETED");
   return (
     <div className="evq-card">
       <div className="evq-card-top">
@@ -25,7 +26,7 @@ function EvaluationCard({ tender }) {
       <div className="evq-foot">
         <div>
           <span>{t("tenders.evCompliance")}</span>
-          <b>{evaluated ? `${tender.compliancePercentage}%` : t("tenders.evNotEvaluated")}</b>
+          <b>{evaluated ? `${tender.compliancePercentage}%` : underEval ? t("tenders.evUnderEval") : t("tenders.evNotEvaluated")}</b>
         </div>
         <Link to={`/tenders/${tender.id}`}>
           {t("tenders.openEvaluation")} <ArrowUpRight size={14} />
@@ -64,14 +65,21 @@ export default function TendersPage() {
   }, [tenders]);
 
   const normalizedQuery = query.trim().toLowerCase();
+  // Showcase tender always first, rest by most recently updated.
+  const orderedTenders = [...tenders].sort((a, b) => {
+    const aPin = (a.referenceNumber || a.tenderRef) === "GEM/2026/B/1001" ? 0 : 1;
+    const bPin = (b.referenceNumber || b.tenderRef) === "GEM/2026/B/1001" ? 0 : 1;
+    if (aPin !== bPin) return aPin - bPin;
+    return String(b.updatedAt || "") < String(a.updatedAt || "") ? -1 : 1;
+  });
   const filteredTenders = normalizedQuery
-    ? tenders.filter(tender => {
+    ? orderedTenders.filter(tender => {
       const vendorNames = tenderVendorNames[tender.id] || [];
       return [tender.name, tender.title, tender.tenderRef, tender.referenceNumber, tender.department, tender.id, ...vendorNames]
         .filter(Boolean)
         .some(value => value.toString().toLowerCase().includes(normalizedQuery));
     })
-    : tenders;
+    : orderedTenders;
 
   const handleQueryChange = value => {
     setQuery(value);
