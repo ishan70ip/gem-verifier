@@ -539,6 +539,11 @@ export const translations = {
     "common.flagForReview": "Flag for Review",
     "common.notFound": "Not Found",
     "common.pending": "Pending",
+    "bot.open": "Open Sahayak assistant",
+    "bot.close": "Close Sahayak assistant",
+    "bot.online": "Online",
+    "bot.placeholder": "Ask Sahayak…",
+    "bot.send": "Send",
   },
   hi: {
     govStrip: "गवर्नमेंट ई-मार्केटप्लेस · वाणिज्य एवं उद्योग मंत्रालय",
@@ -1077,5 +1082,10 @@ export const translations = {
     "common.flagForReview": "समीक्षा हेतु चिह्नित",
     "common.notFound": "नहीं मिला",
     "common.pending": "लंबित",
+    "bot.open": "सहायक खोलें",
+    "bot.close": "सहायक बंद करें",
+    "bot.online": "ऑनलाइन",
+    "bot.placeholder": "सहायक से पूछें…",
+    "bot.send": "भेजें",
   },
 };

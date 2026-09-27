@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Search, HelpCircle, Bell, ChevronDown, RefreshCw, LogOut, UserCheck, Building2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import ChatBot from "./ChatBot";
 
 const officerLinks = [
   { key: "navHome", to: "/" },
@@ -151,6 +152,7 @@ export default function AppShell({ children, noPadding = false }) {
           <span>{t("version")}</span>
         </div>
       </footer>
+      <ChatBot />
     </div>
   );
 }
