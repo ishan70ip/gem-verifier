@@ -8163,3 +8163,47 @@ body {
 .evq-foot span { display: block; font-size: 11px; color: var(--text-muted, #64748b); }
 .evq-foot b { font-size: 14px; }
 .evq-foot a { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--gem-navy, #1e3a5f); text-decoration: none; }
+
+/* Tender detail (centered, GemSarathi-style) */
+.tdet-page { max-width: 860px; margin: 0 auto; padding: 22px 22px 40px; display: flex; flex-direction: column; gap: 16px; }
+.tdet-head-card, .tdet-brief-card, .tdet-verify-card { background: #fff; border: 1px solid var(--border-light, #e2e8f0); border-radius: 12px; padding: 20px 22px; }
+.tdet-head-card h1 { font-size: 25px; margin: 6px 0 8px; line-height: 1.3; }
+.tdet-ref-row { display: flex; gap: 10px; align-items: center; font-size: 12.5px; }
+.tdet-count-badge { text-align: center; background: #fdf8ef; border: 1px solid #f0e2c4; border-radius: 10px; padding: 10px 18px; align-self: flex-start; }
+.tdet-count-badge b { display: block; font-size: 20px; }
+.tdet-count-badge span { font-size: 11px; color: var(--text-muted, #64748b); }
+.tdet-head-card { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.tdet-brief-card h2, .tdet-verify-card h2 { font-size: 16px; margin: 4px 0 8px; display: flex; align-items: center; gap: 8px; }
+.tdet-brief-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .tdet-brief-grid { grid-template-columns: 1fr; } }
+.tdet-brief-grid > p { font-size: 13px; color: var(--text-secondary, #475569); margin: 0; line-height: 1.6; }
+.tdet-meta-boxes { display: flex; flex-direction: column; gap: 8px; }
+.tdet-meta-boxes > div { border-top: 2px solid var(--gem-orange, #b45309); padding-top: 6px; }
+.tdet-meta-boxes span { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted, #64748b); }
+.tdet-meta-boxes b { font-size: 13px; }
+.tdet-verify-card { display: flex; justify-content: space-between; gap: 14px; align-items: center; border-left: 4px solid var(--gem-orange, #b45309); flex-wrap: wrap; }
+.tdet-verify-copy { flex: 1; min-width: 220px; }
+.tdet-verify-copy p { font-size: 12.5px; color: var(--text-secondary, #475569); margin: 0; }
+.tdet-verify-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.tdet-layout { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .tdet-layout { grid-template-columns: 1fr; } }
+.tdet-req-card, .tdet-bids-card, .tdet-flow-card { background: #fff; border: 1px solid var(--border-light, #e2e8f0); border-radius: 12px; padding: 18px; }
+.tdet-req-card h2, .tdet-bids-card h2, .tdet-flow-card h2 { font-size: 15.5px; margin: 4px 0 4px; }
+.tdet-sub { font-size: 12px; color: var(--text-secondary, #475569); margin: 0 0 10px; }
+.tdet-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.tdet-pills button { font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border-light, #e2e8f0); background: #f8fafc; cursor: pointer; }
+.tdet-pills button.active { background: var(--gem-navy, #1e3a5f); color: #fff; border-color: var(--gem-navy, #1e3a5f); }
+.tdet-req-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 640px) { .tdet-req-grid { grid-template-columns: 1fr; } }
+.tdet-req { border: 1px solid var(--border-light, #e2e8f0); border-radius: 10px; padding: 12px; display: flex; gap: 10px; }
+.tdet-req-num { font-size: 11px; font-weight: 800; color: var(--gem-orange, #b45309); }
+.tdet-req-tags { display: flex; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+.tdet-req b { font-size: 13px; display: block; line-height: 1.4; }
+.tdet-req p { font-size: 11.5px; color: var(--text-secondary, #475569); margin: 4px 0 0; line-height: 1.5; }
+.tdet-aside { display: flex; flex-direction: column; gap: 16px; }
+.tdet-bids-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.tdet-bid-row { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border-light, #e2e8f0); }
+.tdet-bid-row b { font-size: 13px; display: block; }
+.tdet-bid-row small { display: block; font-size: 11.5px; color: var(--text-muted, #64748b); margin-top: 2px; }
+.tdet-flow-card ol { margin: 10px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; color: var(--text-secondary, #475569); }
+.tdet-flow-card ol b { color: var(--gem-orange, #b45309); margin-right: 6px; }
