@@ -60,10 +60,25 @@ export default function VendorDashboard() {
   const [gemPanelOpen, setGemPanelOpen] = useState(false);
   const [gemBids, setGemBids] = useState([]);
   const [gemLoading, setGemLoading] = useState(false);
+  const [oppQuery, setOppQuery] = useState("");
+  const [reqCounts, setReqCounts] = useState({});
 
   const showNotification = (text, type = "success") => {
     setNotification({ text, type });
     setTimeout(() => setNotification({ text: "", type: "" }), 5000);
+  };
+
+  const switchTab = (tab) => {
+    setActiveTab(tab);
+    requestAnimationFrame(() => {
+      document.querySelector(".vendor-nav-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const daysRemaining = (deadline) => {
+    if (!deadline) return null;
+    const diff = Math.ceil((new Date(deadline).getTime() - Date.now()) / 86400000);
+    return diff < 0 ? 0 : diff;
   };
 
   useEffect(() => {
@@ -90,7 +105,19 @@ export default function VendorDashboard() {
           gstin: profData.value.organization?.gstin || "",
         });
       }
-      if (tendData.status === "fulfilled") setTenders(tendData.value || []);
+      if (tendData.status === "fulfilled") {
+        const openList = tendData.value || [];
+        setTenders(openList);
+        openList.forEach(async (tenderItem) => {
+          try {
+            const detail = await apiRequest(`/vendor/tenders/${tenderItem.id}`);
+            const count = Array.isArray(detail.requirements) ? detail.requirements.length : null;
+            if (count != null) setReqCounts((prev) => ({ ...prev, [tenderItem.id]: count }));
+          } catch {
+            // requirement counts are best-effort
+          }
+        });
+      }
 
       if (bidsData.status === "fulfilled") {
         const bidList = bidsData.value || [];
@@ -300,6 +327,13 @@ export default function VendorDashboard() {
 
   const totalDocsCount = Object.values(documentsMap).reduce((acc, curr) => acc + curr.length, 0);
 
+  const oppTenders = tenders.filter(
+    (tenderItem) =>
+      tenderItem.title?.toLowerCase().includes(oppQuery.toLowerCase()) ||
+      tenderItem.department?.toLowerCase().includes(oppQuery.toLowerCase()) ||
+      tenderItem.referenceNumber?.toLowerCase().includes(oppQuery.toLowerCase())
+  );
+
   // Bid (if any) the vendor already submitted for the tender open in Modal 1.
   // Its documents can be managed inline: direct upload + GeM import.
   const modalBid = selectedTender && !isBiddingModalOpen
@@ -320,61 +354,158 @@ export default function VendorDashboard() {
         </div>
       )}
 
-      {/* Vendor Header Strip */}
-      <div className="vendor-header-card">
-        <div className="vendor-header-main">
-          <div className="vendor-avatar-badge">
-            <Building2 size={28} />
-          </div>
-          <div>
-            <div className="vendor-code-tag">{profile?.vendorCode || "VEN-VERIFIED"}</div>
-            <h1>{profile?.legalName || t("vendor.orgPortalFallback")}</h1>
-            <p className="vendor-sub">
-              {profile?.contact?.email || "vendor@acme.com"} • {t("vendor.gstinLabel")} {profile?.organization?.gstin || "07AAAAA0000A1Z5"} • {t("vendor.categoryLabel")}{" "}
-              {profile?.organization?.category || "MSME"}
-            </p>
+      {/* Vendor Hero Banner */}
+      <section className="vhero">
+        <div className="vhero-copy">
+          <span className="vhero-eyebrow">{t("vhero.kicker")}</span>
+          <h1>{t("vhero.titleA")} <em>{t("vhero.titleB")}</em></h1>
+          <p>{t("vhero.subtitle")}</p>
+          <div className="vhero-actions">
+            <button className="btn-upload-submit" onClick={() => switchTab("tenders")}>
+              <Search size={15} /> {t("vhero.browse")}
+            </button>
+            <button className="btn-trigger-upload" onClick={() => switchTab("bids")}>
+              {t("vhero.myBids")} <ChevronRight size={14} />
+            </button>
           </div>
         </div>
+      </section>
 
+      {/* Vendor Identity Row */}
+      <section className="videntity">
+        <div className="videntity-badge"><Building2 size={22} /></div>
+        <div className="videntity-copy">
+          <span className="vhero-eyebrow">{t("vhero.registeredVendor")}</span>
+          <h2>{profile?.legalName || t("vendor.orgPortalFallback")}</h2>
+          <p>
+            {t("vhero.vendorAccount")} · {profile?.contact?.email || "vendor@acme.com"}
+          </p>
+        </div>
+        <div className="videntity-right">
+          <span className="vendor-code-tag">{profile?.vendorCode || "VEN-VERIFIED"}</span>
+          <small className="vhero-eyebrow">{t("vhero.accountActive")}</small>
+        </div>
         <button className="btn-edit-profile" onClick={() => setIsEditProfileOpen(true)}>
           <Edit3 size={15} /> {t("vendor.editProfile")}
         </button>
-      </div>
+      </section>
 
-      {/* Vendor Overview Stats Metrics */}
-      <div className="vendor-metrics-grid">
-        <div className="metric-box orange">
-          <div className="metric-icon"><FileText size={20} /></div>
-          <div>
-            <div className="metric-num">{tenders.length}</div>
-            <div className="metric-lbl">{t("vendor.availableOpenTenders")}</div>
-          </div>
+      {/* Stat Cards */}
+      <div className="vstats">
+        <div className="vstat">
+          <div className="vstat-top"><FileText size={18} /><strong>{tenders.length}</strong></div>
+          <b>{t("vhero.statOpen")}</b>
+          <small>{t("vhero.statOpenSub")}</small>
         </div>
-
-        <div className="metric-box blue">
-          <div className="metric-icon"><Send size={20} /></div>
-          <div>
-            <div className="metric-num">{bids.length}</div>
-            <div className="metric-lbl">{t("vendor.bidsSubmittedMetric")}</div>
-          </div>
+        <div className="vstat">
+          <div className="vstat-top"><Send size={18} /><strong>{bids.length}</strong></div>
+          <b>{t("vhero.statBids")}</b>
+          <small>{t("vhero.statBidsSub")}</small>
         </div>
-
-        <div className="metric-box green">
-          <div className="metric-icon"><Award size={20} /></div>
-          <div>
-            <div className="metric-num">{contracts.length}</div>
-            <div className="metric-lbl">{t("vendor.awardedContracts")}</div>
-          </div>
+        <div className="vstat">
+          <div className="vstat-top"><Award size={18} /><strong>{contracts.length}</strong></div>
+          <b>{t("vhero.statContracts")}</b>
+          <small>{t("vhero.statContractsSub")}</small>
         </div>
-
-        <div className="metric-box teal">
-          <div className="metric-icon"><FileCheck size={20} /></div>
-          <div>
-            <div className="metric-num">{totalDocsCount}</div>
-            <div className="metric-lbl">{t("vendor.complianceDocuments")}</div>
-          </div>
+        <div className="vstat">
+          <div className="vstat-top"><FileCheck size={18} /><strong>{totalDocsCount}</strong></div>
+          <b>{t("vhero.statDocs")}</b>
+          <small>{t("vhero.statDocsSub")}</small>
         </div>
       </div>
+
+      {/* Opportunities */}
+      <section className="vopp">
+        <div className="vopp-head">
+          <div>
+            <span className="vhero-eyebrow">{t("vhero.oppKicker")}</span>
+            <h2>{t("vhero.oppTitle")}</h2>
+            <p>{t("vhero.oppDesc")}</p>
+          </div>
+          <label className="vopp-search">
+            <Search size={15} />
+            <input
+              placeholder={t("vhero.oppSearch")}
+              value={oppQuery}
+              onChange={(e) => setOppQuery(e.target.value)}
+            />
+          </label>
+        </div>
+        {oppTenders.length === 0 ? (
+          <div className="vendor-empty-state">{t("vendor.noTendersEmpty")}</div>
+        ) : (
+          oppTenders.map((tender) => {
+            const existingBid = bids.find((b) => b.tenderId === tender.id);
+            const days = daysRemaining(tender.submissionDeadline);
+            const reqCount = reqCounts[tender.id];
+            return (
+              <div key={tender.id} className="vopp-row">
+                <div className="vopp-main">
+                  <span className="ref-number">{tender.referenceNumber || tender.id}</span>
+                  <h3>{tender.title}</h3>
+                  <p className="tender-dept-name">{tender.department}</p>
+                </div>
+                <div className="vopp-meta">
+                  <span>{t("vhero.deadlineLabel")}</span>
+                  <b>{tender.submissionDeadline ? new Date(tender.submissionDeadline).toLocaleDateString() : "—"}</b>
+                  {days != null && <small className={days <= 30 ? "vopp-urgent" : ""}>{t("vhero.daysLeft").replace("{n}", days)}</small>}
+                </div>
+                <div className="vopp-meta">
+                  <span>{t("vhero.reqLabel")}</span>
+                  <b>{reqCount ?? "—"}</b>
+                  <small>{t("vhero.reqUnit")}</small>
+                </div>
+                <div className="vopp-actions">
+                  <button className="btn-view-details" onClick={() => handleOpenTenderDetails(tender.id)}>
+                    {t("vhero.viewTender")}
+                  </button>
+                  {existingBid ? (
+                    <span className="bid-submitted-pill"><CheckCircle2 size={15} /> {t("vendor.bidSubmittedLabel")}</span>
+                  ) : (
+                    <button className="btn-submit-bid-action" onClick={() => handleOpenBidWizard(tender)}>
+                      <Send size={14} /> {t("vendor.submitBid")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </section>
+
+      {/* Recent Bids */}
+      <section className="vopp">
+        <div className="vopp-head">
+          <div>
+            <span className="vhero-eyebrow">{t("vhero.recentKicker")}</span>
+            <h2>{t("vhero.recentTitle")}</h2>
+          </div>
+          <button className="btn-view-details" onClick={() => switchTab("bids")}>
+            {t("vhero.viewAllBids")}
+          </button>
+        </div>
+        {bids.length === 0 ? (
+          <div className="vendor-empty-state">{t("vendor.noBidsEmpty")}</div>
+        ) : (
+          bids.slice(0, 3).map((bid) => {
+            const tenderInfo = tenders.find((tenderItem) => tenderItem.id === bid.tenderId);
+            return (
+              <div key={bid.id} className="vopp-row">
+                <div className="vopp-main">
+                  <span className="ref-number">{bid.bidReference}</span>
+                  <h3>{tenderInfo?.title || bid.tenderId}</h3>
+                  <p className="tender-dept-name">{bid.submissionStatus}</p>
+                </div>
+                <div className="vopp-actions">
+                  <button className="btn-view-details" onClick={() => { setActiveTab("bids"); }}>
+                    {t("vhero.viewBid")}
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </section>
 
       {/* Navigation Tabs */}
       <div className="vendor-nav-tabs">
