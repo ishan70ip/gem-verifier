@@ -10,12 +10,42 @@ import { useLanguage } from "../context/LanguageContext";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const STOPWORDS = new Set(["with", "from", "must", "shall", "year", "years", "your", "this", "that", "have", "will", "minimum", "required", "valid", "must"]);
+// Acronyms that carry the whole meaning despite being short.
+const ACRONYMS = new Set(["gst", "pan", "emd", "oem", "maf", "itr", "iso", "udyam", "msme", "nsic", "epfo", "esic", "gstin"]);
+// Requirement word -> extra match terms (doc types often use siblings).
+const SYNONYMS = {
+  turnover: ["turnover", "financial", "revenue", "audit", "audited"],
+  financial: ["turnover", "financial", "revenue", "audit", "audited"],
+  emd: ["emd", "earnest", "deposit", "money", "security"],
+  earnest: ["emd", "earnest", "deposit", "money", "security"],
+  money: ["emd", "earnest", "deposit", "money"],
+  deposit: ["emd", "earnest", "deposit", "money"],
+  oem: ["oem", "maf", "manufacturer", "authorisation", "authorization"],
+  authorisation: ["oem", "maf", "manufacturer", "authorisation", "authorization"],
+  authorization: ["oem", "maf", "manufacturer", "authorisation", "authorization"],
+  gst: ["gst", "gstin", "registration", "returns"],
+  registration: ["udyam", "msme", "gst", "registration"],
+  pan: ["pan", "income", "tax"],
+  udyam: ["udyam", "msme", "registration"],
+  msme: ["udyam", "msme", "registration"],
+  iso: ["iso", "quality", "certificate"],
+  warranty: ["warranty", "guarantee", "amc", "support"],
+  experience: ["experience", "work", "order", "completion", "executed"],
+  content: ["content", "local", "indigenous", "make"],
+  local: ["content", "local", "indigenous", "make"],
+};
 
 const isTechnicalDoc = (doc) => /technical/i.test(`${doc.documentType || ""} ${doc.originalFilename || ""}`);
 
 function keywordsOf(req) {
   const text = `${req.title || ""} ${req.description || ""}`.toLowerCase();
-  return text.split(/[^a-z0-9]+/).filter((w) => w.length > 3 && !STOPWORDS.has(w));
+  const words = text.split(/[^a-z0-9]+/).filter((w) => w && (w.length > 3 || ACRONYMS.has(w)) && !STOPWORDS.has(w));
+  const out = new Set();
+  for (const w of words) {
+    out.add(w);
+    for (const s of SYNONYMS[w] || []) out.add(s);
+  }
+  return [...out];
 }
 
 // Latest non-technical document whose type/filename overlaps the requirement.
@@ -436,7 +466,7 @@ export default function VendorBidWorkspacePage() {
               <dl>
                 <div><dt>{t("ws.asideDept")}</dt><dd><Building2 size={14} /> {tender?.department || "—"}</dd></div>
                 <div><dt>{t("ws.deadline")}</dt><dd><Clock3 size={14} /> {dateTimeLabel(deadline)}</dd></div>
-                <div><dt>{t("ws.asideDocs")}</dt><dd><FileText size={14} /> {documents.length} / {requirements.length || "—"}</dd></div>
+                <div><dt>{t("ws.slotsFilled")}</dt><dd><FileText size={14} /> {uploadedRequired} / {requirements.length || "—"}</dd></div>
               </dl>
             </section>
             <section className="ws-help-card">
