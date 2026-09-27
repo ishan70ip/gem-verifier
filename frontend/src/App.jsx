@@ -4,6 +4,7 @@ import { LanguageProvider } from "./context/LanguageContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import LoginPage from "./pages/LoginPage";
 import VendorDashboard from "./pages/VendorDashboard";
+import VendorBidWorkspacePage from "./pages/VendorBidWorkspacePage";
 import Dashboard from "./pages/Dashboard";
 import TendersPage from "./pages/TendersPage";
 import TenderDetailPage from "./pages/TenderDetailPage";
@@ -48,6 +49,14 @@ export default function App() {
                 element={
                   <ProtectedRoute allowedRole="vendor">
                     <VendorDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/vendor/bids/:id/workspace"
+                element={
+                  <ProtectedRoute allowedRole="vendor">
+                    <VendorBidWorkspacePage />
                   </ProtectedRoute>
                 }
               />

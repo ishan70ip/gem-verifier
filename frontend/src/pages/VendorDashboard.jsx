@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AppShell from "../components/AppShell";
 import StatusBadge from "../components/StatusBadge";
 import { apiRequest } from "../services/apiClient";
@@ -29,6 +30,7 @@ import {
 
 export default function VendorDashboard() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [tenders, setTenders] = useState([]);
   const [bids, setBids] = useState([]);
@@ -600,9 +602,14 @@ export default function VendorDashboard() {
                                 </div>
                               </form>
                             ) : (
-                              <button className="btn-trigger-upload" onClick={() => setActiveUploadBidId(bid.id)}>
-                                <Upload size={14} /> {t("vendor.uploadNewDoc")}
-                              </button>
+                              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                <button className="btn-upload-submit" onClick={() => navigate(`/vendor/bids/${bid.id}/workspace`)}>
+                                  <FileCheck size={14} /> {t("vendor.openWorkspace")}
+                                </button>
+                                <button className="btn-trigger-upload" onClick={() => setActiveUploadBidId(bid.id)}>
+                                  <Upload size={14} /> {t("vendor.uploadNewDoc")}
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -733,81 +740,25 @@ export default function VendorDashboard() {
                   </h5>
                   {modalBidDocs.length > 0 && (
                     <div className="docs-flex-list" style={{ marginBottom: 12 }}>
-                      {modalBidDocs.map((doc) => (
+                      {modalBidDocs.slice(0, 3).map((doc) => (
                         <div key={doc.id} className="doc-item-pill">
                           <div className="doc-info font-bold">
                             <span>{doc.originalFilename}</span>
                             <small>{doc.documentType}</small>
                           </div>
-                          <button onClick={() => handleDownloadDoc(doc)} className="btn-download-doc" title={t("vendor.downloadFileTitle")}>
-                            <Download size={13} />
-                          </button>
                         </div>
                       ))}
                     </div>
                   )}
-                  <form onSubmit={(e) => handleUploadDocument(e, modalBid.id)} className="upload-form-expanded" style={{ marginBottom: 12 }}>
-                    <div className="form-row">
-                      <label>{t("vendor.docCategoryLabel")}</label>
-                      <select value={docCategory} onChange={(e) => setDocCategory(e.target.value)}>
-                        <option value="Technical Proposal">{t("vendor.docTypeTechnical")}</option>
-                        <option value="ISO 9001 Certificate">{t("vendor.docTypeIso")}</option>
-                        <option value="OEM Warranty Letter">{t("vendor.docTypeWarranty")}</option>
-                        <option value="Past Contract Experience">{t("vendor.docTypeExperience")}</option>
-                        <option value="Commercial Bid Financial Quote">{t("vendor.docTypeCommercial")}</option>
-                      </select>
-                    </div>
-                    <div className="form-row">
-                      <label>{t("vendor.selectFileLabel")}</label>
-                      <input type="file" required onChange={(e) => setFileToUpload(e.target.files[0])} />
-                    </div>
-                    <div className="form-btn-group">
-                      <button type="submit" disabled={isUploading} className="btn-upload-submit">
-                        {isUploading ? t("vendor.uploading") : t("vendor.uploadDocument")}
-                      </button>
-                    </div>
-                  </form>
-                  <div className="upload-form-expanded">
-                    <div className="form-row">
-                      <label>{t("vendor.gemImportTitle")}</label>
-                      <p className="subtext" style={{ margin: "0 0 8px" }}>{t("vendor.gemImportDesc")}</p>
-                      <button
-                        type="button"
-                        className="btn-trigger-upload"
-                        onClick={handleToggleGemPanel}
-                      >
-                        <Download size={14} /> {t("vendor.gemBrowseBtn")}
-                      </button>
-                      {gemPanelOpen && (
-                        <div style={{ marginTop: 10 }}>
-                          {gemLoading && <p className="subtext">{t("vendor.gemLoadingIds")}</p>}
-                          {!gemLoading && gemBids.length === 0 && (
-                            <p className="subtext">{t("vendor.gemNoIds")}</p>
-                          )}
-                          {!gemLoading && gemBids.map((bundle) => (
-                            <div key={bundle.id} className="doc-item-pill" style={{ marginBottom: 8 }}>
-                              <div className="doc-info font-bold">
-                                <span className="mono">{bundle.id}</span>
-                                <small>
-                                  {bundle.seller || ""}
-                                  {bundle.docs ? ` · ${bundle.docs.length} ${t("vendor.gemDocsUnit")}` : ""}
-                                </small>
-                              </div>
-                              <button
-                                type="button"
-                                disabled={isImporting}
-                                className="btn-upload-submit"
-                                onClick={() => handleImportGem(modalBid.id, bundle.id)}
-                              >
-                                {isImporting ? t("vendor.gemImporting") : t("vendor.gemImportBtn")}
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="field-hint" style={{ marginTop: 6 }}>{t("vendor.gemDemoHint")}</div>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    className="btn-upload-submit"
+                    style={{ width: "100%", justifyContent: "center" }}
+                    onClick={() => { setSelectedTender(null); navigate(`/vendor/bids/${modalBid.id}/workspace`); }}
+                  >
+                    <Upload size={14} /> {t("vendor.openWorkspace")}
+                  </button>
+                  <div className="field-hint" style={{ marginTop: 6 }}>{t("vendor.workspaceHint")}</div>
                 </div>
               )}
             </div>

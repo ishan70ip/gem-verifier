@@ -8031,3 +8031,70 @@ body {
   justify-content: center;
   cursor: pointer;
 }
+
+/* Vendor bid workspace */
+.ws-page { max-width: 1120px; margin: 0 auto; padding: 22px 22px 40px; display: flex; flex-direction: column; gap: 16px; }
+.ws-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--gem-navy, #1e3a5f); text-decoration: none; align-self: flex-start; }
+.ws-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.ws-header h1 { font-size: 24px; margin: 4px 0 8px; color: var(--text-heading, #1e293b); }
+.ws-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gem-orange, #b45309); }
+.ws-reference { display: flex; gap: 14px; align-items: center; font-size: 13px; color: var(--text-secondary, #475569); }
+.ws-reference span { display: inline-flex; align-items: center; gap: 5px; }
+.ws-status { display: flex; gap: 10px; align-items: center; background: #fff; border: 1px solid var(--border-light, #e2e8f0); border-radius: 10px; padding: 10px 16px; }
+.ws-status.is-complete { border-color: #bbf7d0; background: #f0fdf4; }
+.ws-status small { display: block; font-size: 11px; color: var(--text-muted, #64748b); }
+.ws-status strong { font-size: 14px; }
+.ws-overview, .ws-gem { background: #fff; border: 1px solid var(--border-light, #e2e8f0); border-radius: 12px; padding: 18px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.ws-overview-copy, .ws-gem > div:first-child { flex: 2; min-width: 220px; }
+.ws-overview-copy h2, .ws-gem h2 { font-size: 17px; margin: 4px 0 6px; }
+.ws-overview-copy p, .ws-gem p { font-size: 13px; color: var(--text-secondary, #475569); margin: 0; }
+.ws-progress { flex: 1; min-width: 220px; }
+.ws-progress > div { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 6px; }
+.ws-progress i { display: block; height: 8px; background: #eef2f7; border-radius: 6px; overflow: hidden; }
+.ws-progress i b { display: block; height: 100%; background: var(--gem-green, #15803d); border-radius: 6px; transition: width 0.3s; }
+.ws-progress small { font-size: 12px; color: var(--text-muted, #64748b); }
+.ws-deadline { display: flex; gap: 10px; align-items: center; }
+.ws-deadline span { display: block; font-size: 11px; color: var(--text-muted, #64748b); }
+.ws-deadline strong { font-size: 13.5px; }
+.ws-gem .btn-trigger-upload { flex-shrink: 0; }
+.ws-layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .ws-layout { grid-template-columns: 1fr; } }
+.ws-main-column { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ws-documents-card, .ws-technical-card { background: #fff; border: 1px solid var(--border-light, #e2e8f0); border-radius: 12px; padding: 18px; }
+.ws-section-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.ws-section-head h2 { font-size: 16px; margin: 4px 0 4px; }
+.ws-section-head p { font-size: 12.5px; color: var(--text-secondary, #475569); margin: 0; }
+.ws-section-head > span { font-size: 12px; font-weight: 700; color: var(--text-muted, #64748b); white-space: nowrap; }
+.ws-complete-pill { color: var(--gem-green, #15803d); }
+.ws-document-list { display: flex; flex-direction: column; gap: 10px; }
+.ws-document-row { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border-light, #e2e8f0); border-radius: 10px; padding: 12px 14px; background: #fbfdff; }
+.ws-document-row.is-uploaded { border-color: #bbf7d0; background: #f6fef9; }
+.ws-document-number { font-size: 12px; font-weight: 800; color: var(--text-muted, #64748b); background: #eef2f7; border-radius: 6px; padding: 4px 8px; flex-shrink: 0; }
+.ws-document-row.is-uploaded .ws-document-number { background: #dcfce7; color: #15803d; }
+.ws-document-copy { flex: 1; min-width: 0; }
+.ws-document-copy h3 { font-size: 14px; margin: 0 0 2px; }
+.ws-document-copy em { font-style: normal; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #b45309; }
+.ws-document-copy em:not(.is-required) { color: #64748b; }
+.ws-document-copy p { font-size: 12.5px; color: var(--text-secondary, #475569); margin: 4px 0; }
+.ws-document-copy small { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #15803d; font-weight: 600; }
+.ws-upload, .ws-replace, .ws-view { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; border-radius: 8px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--gem-navy, #1e3a5f); }
+.ws-upload { background: var(--gem-navy, #1e3a5f); color: #fff; border: none; }
+.ws-replace { background: #fff; color: var(--gem-navy, #1e3a5f); }
+.ws-view { background: #fff; border-color: var(--border-light, #e2e8f0); color: var(--text-secondary, #475569); padding: 8px 10px; }
+.ws-upload:disabled, .ws-replace:disabled { opacity: 0.6; cursor: wait; }
+.ws-empty { text-align: center; color: var(--text-muted, #64748b); font-size: 13px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.ws-technical-dropzone { display: flex; gap: 12px; align-items: center; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 16px; }
+.ws-technical-dropzone.is-uploaded { border-style: solid; border-color: #bbf7d0; background: #f6fef9; }
+.ws-tech-icon { color: var(--gem-navy, #1e3a5f); flex-shrink: 0; }
+.ws-technical-dropzone > div:nth-child(2) { flex: 1; min-width: 0; }
+.ws-technical-dropzone strong { font-size: 13.5px; display: block; }
+.ws-technical-dropzone p { font-size: 12px; color: var(--text-secondary, #475569); margin: 4px 0 0; }
+.ws-aside { display: flex; flex-direction: column; gap: 16px; }
+.ws-tender-card, .ws-help-card { background: #fff; border: 1px solid var(--border-light, #e2e8f0); border-radius: 12px; padding: 16px; }
+.ws-tender-card h2 { font-size: 15px; margin: 4px 0 10px; }
+.ws-tender-card dl { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.ws-tender-card dl > div { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+.ws-tender-card dt { color: var(--text-muted, #64748b); }
+.ws-tender-card dd { margin: 0; font-weight: 600; display: flex; align-items: center; gap: 5px; text-align: right; }
+.ws-help-card { display: flex; gap: 10px; font-size: 12.5px; }
+.ws-help-card p { margin: 4px 0 0; color: var(--text-secondary, #475569); font-size: 12px; }
