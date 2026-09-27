@@ -228,6 +228,53 @@ export default function VendorBidWorkspacePage() {
     }
   };
 
+  const importAllGem = async () => {
+    let list = gemBids;
+    if (!list.length) {
+      try {
+        setGemLoading(true);
+        const res = await apiRequest("/vendor/gem-bids/demo-ids");
+        list = res.bids || (res.demo_ids || []).map((gid) => ({ id: gid }));
+        setGemBids(list);
+      } catch {
+        list = [];
+      } finally {
+        setGemLoading(false);
+      }
+    }
+    if (!list.length) {
+      setUploadError(t("ws.gemEmpty"));
+      return;
+    }
+    try {
+      setImportingId("__all__");
+      setUploadError("");
+      let total = 0;
+      for (const bundle of list) {
+        try {
+          const res = await apiRequest(`/vendor/bids/${bidId}/import-gem`, {
+            method: "POST",
+            body: JSON.stringify({ gem_bid_id: bundle.id }),
+          });
+          const imported = res.imported || [];
+          if (imported.length) {
+            setDocuments((prev) => [...prev, ...imported]);
+            total += imported.length;
+          }
+        } catch {
+          // continue with the next bundle; per-bundle errors surface below
+        }
+      }
+      setUploadSuccess(
+        total > 0
+          ? t("ws.gemImportOk").replace("{n}", total)
+          : t("ws.gemAlreadyThere")
+      );
+    } finally {
+      setImportingId("");
+    }
+  };
+
   if (loading) {
     return <AppShell><main className="page-content"><div className="card"><div className="empty-state"><h3>{t("ws.loading")}</h3></div></div></main></AppShell>;
   }
@@ -283,6 +330,15 @@ export default function VendorBidWorkspacePage() {
           </div>
           <button type="button" className="btn-trigger-upload" onClick={toggleGem}>
             <Download size={14} /> {t("ws.gemBrowse")}
+          </button>
+          <button
+            type="button"
+            className="btn-upload-submit"
+            style={{ marginLeft: 8 }}
+            disabled={importingId === "__all__"}
+            onClick={importAllGem}
+          >
+            <Download size={14} /> {importingId === "__all__" ? t("ws.importingAll") : t("ws.pullAll")}
           </button>
           {gemOpen && (
             <div style={{ marginTop: 12 }}>
