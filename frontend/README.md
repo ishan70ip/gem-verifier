@@ -32,7 +32,7 @@ VITE_SUPABASE_KEY=your-publishable-key
 Without these, the dashboard loads data on open as normal; with them, new
 bids/updates stream in live with no refresh.
 
-## Demo logins (password for all: `Password123!`)
+## Demo logins (password for all: `GeM#Demo2026!Verify`)
 
 - Officer: `officer@procurement.gov.in`
 - Vendors: `vendor@acme.com`, `vendor2@brightline.in`, `vendor3@shadytraders.in`

@@ -46,7 +46,7 @@ npm install
 npm run dev      # UI on http://localhost:5173
 ```
 
-Open http://localhost:5173 and log in (password for all: `Password123!`):
+Open http://localhost:5173 and log in (password for all: `GeM#Demo2026!Verify`):
 
 | Role | Email | Sees |
 |---|---|---|

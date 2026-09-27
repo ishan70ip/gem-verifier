@@ -102,7 +102,7 @@ export async function seedDatabase() {
   await connectDatabase();
   console.log("Seeding V1 demo database...");
 
-  const passwordHash = await bcrypt.hash("Password123!", 10);
+  const passwordHash = await bcrypt.hash("GeM#Demo2026!Verify", 10);
 
   async function ensureUser(email, role) {
     let user = await User.findOne({ email });
@@ -382,7 +382,7 @@ export async function seedDatabase() {
   }
 
   console.log("Database seed completed successfully!");
-  console.log("Logins (password for all: Password123!):");
+  console.log("Logins (password for all: GeM#Demo2026!Verify):");
   console.log("  officer: officer@procurement.gov.in");
   console.log("  vendors: vendor@acme.com, vendor2@brightline.in, vendor3@shadytraders.in");
 }

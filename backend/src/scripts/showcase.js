@@ -19,7 +19,7 @@ async function api(path, token, options = {}) {
 
 const login = await api("/auth/login", null, {
   method: "POST",
-  body: JSON.stringify({ email: "officer@procurement.gov.in", password: "Password123!" }),
+  body: JSON.stringify({ email: "officer@procurement.gov.in", password: "GeM#Demo2026!Verify" }),
 });
 const token = login.access_token;
 const tenders = await api("/tenders", token);
